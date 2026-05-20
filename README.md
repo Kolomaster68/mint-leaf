@@ -102,6 +102,27 @@ Mint Leaf ships with both light and dark app icons that match the system appeara
 
 No external dependencies required.
 
+## Roadmap
+
+Mint Leaf is under active development. Here's what's planned:
+
+| Status | Feature |
+|--------|---------|
+| :construction: | **Multi-Currency Support** — Live exchange rates and per-account currency |
+| :construction: | **Receipt Scanning** — Attach photos or scan receipts with the camera |
+| :date: | **Bill Reminders** — Push notifications for upcoming bills and due dates |
+| :date: | **Export Reports** — Generate PDF and Excel summaries of your finances |
+| :date: | **Widgets** — At-a-glance spending and balance widgets for macOS and iOS |
+| :date: | **Shared Budgets** — Collaborate on budgets with family or a partner |
+| :date: | **Goal Tracking** — Set savings targets and track progress over time |
+| :date: | **Apple Watch App** — Quick balance checks and transaction logging from your wrist |
+| :date: | **Bank Integration** — Connect accounts via Plaid or Open Banking APIs |
+| :bulb: | **DMG Distribution** — Signed and notarised macOS release for direct download |
+
+:construction: = In Progress &nbsp; :date: = Planned &nbsp; :bulb: = Exploring
+
+Have a feature request? [Open an issue](https://github.com/Kolomaster68/mint-leaf/issues).
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
