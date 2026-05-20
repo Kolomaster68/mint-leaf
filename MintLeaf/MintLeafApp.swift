@@ -1,0 +1,121 @@
+import SwiftUI
+import SwiftData
+
+@main
+struct MintLeafApp: App {
+    let container: ModelContainer
+    @AppStorage("appAppearance") private var appearance: String = AppAppearance.system.rawValue
+    @AppStorage("textSizeOffset") private var textSizeOffset: Int = 0
+    @AppStorage("highContrastMode") private var highContrastMode = false
+    @AppStorage("reduceMotion") private var reduceMotion = false
+
+    init() {
+        let schema = Schema([
+            Account.self,
+            Transaction.self,
+            Category.self,
+            Budget.self,
+            BudgetItem.self,
+            ScheduledTransaction.self,
+            CategoryRule.self,
+            MerchantAlias.self,
+        ])
+        let config = ModelConfiguration(
+            "MintLeaf",
+            schema: schema,
+            cloudKitDatabase: .automatic
+        )
+        do {
+            container = try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            fatalError("Failed to configure SwiftData: \(error)")
+        }
+    }
+
+    private var selectedAppearance: AppAppearance {
+        AppAppearance(rawValue: appearance) ?? .system
+    }
+
+    private var textScale: CGFloat {
+        switch textSizeOffset {
+        case -2: return 0.85
+        case -1: return 0.92
+        case 0: return 1.0
+        case 1: return 1.1
+        case 2: return 1.2
+        default: return 1.0
+        }
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .preferredColorScheme(selectedAppearance.colorScheme)
+                .environment(\.appTextScale, textScale)
+                .environment(\.appHighContrast, highContrastMode)
+                .environment(\.appReduceMotion, reduceMotion)
+                .transaction {
+                    if reduceMotion { $0.animation = nil }
+                }
+                #if os(macOS)
+                .onAppear { restoreAppIcon() }
+                #endif
+        }
+        .modelContainer(container)
+        #if os(macOS)
+
+        Settings {
+            SettingsView()
+                .preferredColorScheme(selectedAppearance.colorScheme)
+                .environment(\.appTextScale, textScale)
+                .environment(\.appHighContrast, highContrastMode)
+        }
+        .modelContainer(container)
+        #endif
+    }
+
+    #if os(macOS)
+    private func restoreAppIcon() {
+        let style = UserDefaults.standard.string(forKey: "appIconStyle") ?? "system"
+        switch style {
+        case "light":
+            NSApplication.shared.applicationIconImage = renderLeafIcon(isDark: false)
+        case "dark":
+            NSApplication.shared.applicationIconImage = renderLeafIcon(isDark: true)
+        case "custom":
+            if let data = UserDefaults.standard.data(forKey: "customIconData"),
+               let img = NSImage(data: data) {
+                NSApplication.shared.applicationIconImage = img
+            }
+        default:
+            break
+        }
+    }
+
+    private func renderLeafIcon(isDark: Bool) -> NSImage? {
+        let size: CGFloat = 512
+        let view = ZStack {
+            RoundedRectangle(cornerRadius: size * 0.22)
+                .fill(isDark
+                    ? Color(red: 0.06, green: 0.06, blue: 0.06)
+                    : Color(red: 0.96, green: 0.96, blue: 0.97))
+            Image(systemName: "leaf.fill")
+                .font(.system(size: size * 0.52, weight: .regular))
+                .foregroundStyle(
+                    isDark
+                        ? AppTheme.accentGradient(for: .dark)
+                        : AppTheme.accentGradient(for: .light)
+                )
+        }
+        .frame(width: size, height: size)
+
+        let hosting = NSHostingView(rootView: view)
+        hosting.frame = NSRect(x: 0, y: 0, width: size, height: size)
+        guard let rep = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { return nil }
+        hosting.cacheDisplay(in: hosting.bounds, to: rep)
+        let img = NSImage(size: NSSize(width: size, height: size))
+        img.addRepresentation(rep)
+        return img
+    }
+    #endif
+}
