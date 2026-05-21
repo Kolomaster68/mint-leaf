@@ -742,15 +742,50 @@ struct SettingsView: View {
 
     private func resetAllData() {
         do {
-            try context.delete(model: Transaction.self)
-            try context.delete(model: BudgetItem.self)
-            try context.delete(model: Budget.self)
-            try context.delete(model: ScheduledTransaction.self)
-            try context.delete(model: CategoryRule.self)
-            try context.delete(model: MerchantAlias.self)
-            try context.delete(model: Account.self)
-            try context.delete(model: Category.self)
+            // Fetch and delete each object individually — more reliable than batch delete with relationships
+            let transactions = try context.fetch(FetchDescriptor<Transaction>())
+            transactions.forEach { context.delete($0) }
+
+            let budgetItems = try context.fetch(FetchDescriptor<BudgetItem>())
+            budgetItems.forEach { context.delete($0) }
+
+            let budgets = try context.fetch(FetchDescriptor<Budget>())
+            budgets.forEach { context.delete($0) }
+
+            let scheduled = try context.fetch(FetchDescriptor<ScheduledTransaction>())
+            scheduled.forEach { context.delete($0) }
+
+            let rules = try context.fetch(FetchDescriptor<CategoryRule>())
+            rules.forEach { context.delete($0) }
+
+            let aliases = try context.fetch(FetchDescriptor<MerchantAlias>())
+            aliases.forEach { context.delete($0) }
+
+            let accounts = try context.fetch(FetchDescriptor<Account>())
+            accounts.forEach { context.delete($0) }
+
+            let categories = try context.fetch(FetchDescriptor<Category>())
+            categories.forEach { context.delete($0) }
+
             try context.save()
+
+            // Reset all UserDefaults / AppStorage keys
+            let defaults = UserDefaults.standard
+            defaults.removeObject(forKey: "hasCompletedOnboarding")
+            defaults.removeObject(forKey: "shouldStartTutorial")
+            defaults.removeObject(forKey: "sidebarAccountsCollapsed")
+            defaults.removeObject(forKey: "sidebarToolsCollapsed")
+            defaults.removeObject(forKey: "appIconStyle")
+            defaults.removeObject(forKey: "customIconData")
+            defaults.removeObject(forKey: "textSizeOffset")
+            defaults.removeObject(forKey: "highContrastMode")
+            defaults.removeObject(forKey: "reduceMotion")
+            defaults.removeObject(forKey: "biometricLockEnabled")
+            for flow in TutorialLibrary.allFlows {
+                defaults.removeObject(forKey: "tutorial_\(flow.id)_completed")
+            }
+
+            // Re-seed default categories and reset onboarding
             DefaultCategories.seed(context: context)
             try context.save()
             hasCompletedOnboarding = false
