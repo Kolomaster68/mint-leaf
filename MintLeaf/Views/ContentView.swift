@@ -547,7 +547,7 @@ struct ContentView: View {
         case .tags:
             ComingSoonView(title: "Tags", icon: "tag", description: "Create custom tags to organise transactions across categories.")
         case .importExport:
-            ComingSoonView(title: "Import / Export", icon: "square.and.arrow.up.on.square", description: "Import transactions from CSV or export your data.")
+            ImportExportView()
         }
     }
     #endif

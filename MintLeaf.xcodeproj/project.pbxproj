@@ -17,6 +17,12 @@
 		F1A2B3C4D5E6F7A8B9C0D1E3 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */; };
 		E1B2C3D4E5F6A7B8C9D0E1F5 /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F6A7B8C9D0E1F4 /* ExchangeRateService.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F7 /* ScheduledTransactionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F8 /* ScheduledTransactionProcessor.swift */; };
+		XLSX1234BUILD1MACVIEW00 /* XLSXImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = XLSX1234FILEREF0000000 /* XLSXImporter.swift */; };
+		XLSX1234BUILD2IOSVIEW00 /* XLSXImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = XLSX1234FILEREF0000000 /* XLSXImporter.swift */; };
+		XLSV1234BUILD1MACVIEW00 /* ExcelImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = XLSV1234FILEREF0000000 /* ExcelImportView.swift */; };
+		XLSV1234BUILD2IOSVIEW00 /* ExcelImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = XLSV1234FILEREF0000000 /* ExcelImportView.swift */; };
+		IMEX1234BUILD1MACVIEW00 /* ImportExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMEX1234FILEREF0000000 /* ImportExportView.swift */; };
+		IMEX1234BUILD2IOSVIEW00 /* ImportExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMEX1234FILEREF0000000 /* ImportExportView.swift */; };
 		1A735A4FDAB39892B7822CF3 /* TutorialEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 011BDE0568F617717E4BF168 /* TutorialEngine.swift */; };
 		1DCBD48899712CD15DD2CE02 /* CategoryRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE78ECFFABDBAD2FDFEA52E3 /* CategoryRule.swift */; };
 		1F1192AF97BAF7E9DE335E0A /* RulesEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD76ABAEA44586D185B3F8E /* RulesEngine.swift */; };
@@ -129,6 +135,9 @@
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		E1B2C3D4E5F6A7B8C9D0E1F4 /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F8 /* ScheduledTransactionProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledTransactionProcessor.swift; sourceTree = "<group>"; };
+		XLSX1234FILEREF0000000 /* XLSXImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XLSXImporter.swift; sourceTree = "<group>"; };
+		XLSV1234FILEREF0000000 /* ExcelImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcelImportView.swift; sourceTree = "<group>"; };
+		IMEX1234FILEREF0000000 /* ImportExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportView.swift; sourceTree = "<group>"; };
 		011BDE0568F617717E4BF168 /* TutorialEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialEngine.swift; sourceTree = "<group>"; };
 		0721006D808100F736805DBD /* PDFImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFImportView.swift; sourceTree = "<group>"; };
 		073E7F3B5A9437A6519CC7E5 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
@@ -260,6 +269,7 @@
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */,
 				E1B2C3D4E5F6A7B8C9D0E1F4 /* ExchangeRateService.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F8 /* ScheduledTransactionProcessor.swift */,
+				XLSX1234FILEREF0000000 /* XLSXImporter.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -297,6 +307,8 @@
 			children = (
 				13A333823F39D6E5096B8E6E /* CSVImportView.swift */,
 				499957622882D24295D729C4 /* EditTransactionSheet.swift */,
+				XLSV1234FILEREF0000000 /* ExcelImportView.swift */,
+				IMEX1234FILEREF0000000 /* ImportExportView.swift */,
 				0721006D808100F736805DBD /* PDFImportView.swift */,
 				26C907D3A70B462E59101FE1 /* ReconcileView.swift */,
 				97A589A60A99BC043BC7EDA0 /* ScheduledListView.swift */,
@@ -515,6 +527,9 @@
 				F1A2B3C4D5E6F7A8B9C0D1E3 /* UpdateChecker.swift in Sources */,
 				E1B2C3D4E5F6A7B8C9D0E1F5 /* ExchangeRateService.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F7 /* ScheduledTransactionProcessor.swift in Sources */,
+				XLSX1234BUILD1MACVIEW00 /* XLSXImporter.swift in Sources */,
+				XLSV1234BUILD1MACVIEW00 /* ExcelImportView.swift in Sources */,
+				IMEX1234BUILD1MACVIEW00 /* ImportExportView.swift in Sources */,
 				1A735A4FDAB39892B7822CF3 /* TutorialEngine.swift in Sources */,
 				C52155E69A9E94212DE94979 /* TutorialOverlay.swift in Sources */,
 				478C56143F92B3ADDF184077 /* View+SheetForm.swift in Sources */,
@@ -579,6 +594,9 @@
 				F1A2B3C4D5E6F7A8B9C0D1E4 /* UpdateChecker.swift in Sources */,
 				E1B2C3D4E5F6A7B8C9D0E1F6 /* ExchangeRateService.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F9 /* ScheduledTransactionProcessor.swift in Sources */,
+				XLSX1234BUILD2IOSVIEW00 /* XLSXImporter.swift in Sources */,
+				XLSV1234BUILD2IOSVIEW00 /* ExcelImportView.swift in Sources */,
+				IMEX1234BUILD2IOSVIEW00 /* ImportExportView.swift in Sources */,
 				A29D41FF4C1D6A6B792513A4 /* TutorialEngine.swift in Sources */,
 				CF7F8953815F274A0FB3140C /* TutorialOverlay.swift in Sources */,
 				B72C4E72DE0BDD4944499F9B /* View+SheetForm.swift in Sources */,
@@ -723,7 +741,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.1.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -782,7 +800,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.1.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";

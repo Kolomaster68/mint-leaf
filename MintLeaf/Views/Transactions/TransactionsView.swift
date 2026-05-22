@@ -11,6 +11,7 @@ struct TransactionsView: View {
     @State private var selectedTransaction: Transaction?
     @State private var showingReconcile = false
     @State private var showingPDFImport = false
+    @State private var showingExcelImport = false
 
     private var filteredTransactions: [Transaction] {
         let sorted = account.transactions.sorted { $0.date > $1.date }
@@ -49,6 +50,9 @@ struct TransactionsView: View {
                     Button(action: { showingPDFImport = true }) {
                         Label("Import PDF Statement", systemImage: "doc.richtext")
                     }
+                    Button(action: { showingExcelImport = true }) {
+                        Label("Import Spreadsheet", systemImage: "tablecells.badge.ellipsis")
+                    }
                 } label: {
                     Image(systemName: "square.and.arrow.down")
                 }
@@ -71,6 +75,9 @@ struct TransactionsView: View {
         }
         .sheet(isPresented: $showingPDFImport) {
             PDFImportView(account: account)
+        }
+        .sheet(isPresented: $showingExcelImport) {
+            ExcelImportView(account: account)
         }
         .sheet(isPresented: $showingReconcile) {
             ReconcileView(account: account)
