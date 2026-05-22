@@ -3,6 +3,7 @@ import SwiftData
 
 struct AppNotification: Identifiable {
     let id = UUID()
+    let stableKey: String  // Stable identifier for dismiss persistence
     let icon: String
     let iconColor: Color
     let title: String
@@ -27,6 +28,21 @@ struct NotificationCenterView: View {
     @Query(sort: \ScheduledTransaction.nextDate) private var scheduled: [ScheduledTransaction]
     @Query(sort: \Budget.startDate) private var budgets: [Budget]
     @Query(sort: \Account.sortOrder) private var accounts: [Account]
+    @AppStorage("dismissedNotifications") private var dismissedData: Data = Data()
+
+    private var dismissedKeys: Set<String> {
+        (try? JSONDecoder().decode(Set<String>.self, from: dismissedData)) ?? []
+    }
+
+    private func dismissNotification(_ notif: AppNotification) {
+        var keys = dismissedKeys
+        keys.insert(notif.stableKey)
+        dismissedData = (try? JSONEncoder().encode(keys)) ?? Data()
+    }
+
+    private func restoreAll() {
+        dismissedData = Data()
+    }
 
     private static func relativeDateString(_ date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
@@ -47,11 +63,13 @@ struct NotificationCenterView: View {
         let today = Date()
         let sevenDays = calendar.date(byAdding: .day, value: 7, to: today) ?? today
         let threeDays = calendar.date(byAdding: .day, value: 3, to: today) ?? today
+        let dismissed = dismissedKeys
 
         // Bills and subscriptions due soon
         for item in scheduled where item.isActive {
             if item.nextDate <= today {
                 items.append(AppNotification(
+                    stableKey: "overdue-\(item.title)",
                     icon: "exclamationmark.circle.fill",
                     iconColor: .red,
                     title: "\(item.title) is overdue",
@@ -61,6 +79,7 @@ struct NotificationCenterView: View {
                 ))
             } else if item.nextDate <= threeDays {
                 items.append(AppNotification(
+                    stableKey: "due-soon-\(item.title)",
                     icon: item.isSubscription ? "arrow.triangle.2.circlepath" : "calendar.badge.clock",
                     iconColor: .orange,
                     title: "\(item.title) due soon",
@@ -70,6 +89,7 @@ struct NotificationCenterView: View {
                 ))
             } else if item.nextDate <= sevenDays {
                 items.append(AppNotification(
+                    stableKey: "coming-up-\(item.title)",
                     icon: item.isSubscription ? "arrow.triangle.2.circlepath" : "calendar",
                     iconColor: .blue,
                     title: "\(item.title) coming up",
@@ -87,6 +107,7 @@ struct NotificationCenterView: View {
                 let progress = item.progress
                 if progress >= 1.0 {
                     items.append(AppNotification(
+                        stableKey: "budget-exceeded-\(category.name)",
                         icon: "exclamationmark.triangle.fill",
                         iconColor: .red,
                         title: "\(category.name) budget exceeded",
@@ -96,6 +117,7 @@ struct NotificationCenterView: View {
                     ))
                 } else if progress >= 0.8 {
                     items.append(AppNotification(
+                        stableKey: "budget-warning-\(category.name)",
                         icon: "chart.pie.fill",
                         iconColor: .orange,
                         title: "\(category.name) budget at \(Int(progress * 100))%",
@@ -111,6 +133,7 @@ struct NotificationCenterView: View {
         for account in accounts where !account.isArchived {
             if account.currentBalance < 0 && account.type != .creditCard {
                 items.append(AppNotification(
+                    stableKey: "negative-\(account.name)",
                     icon: "exclamationmark.triangle.fill",
                     iconColor: .red,
                     title: "\(account.name) is negative",
@@ -121,6 +144,7 @@ struct NotificationCenterView: View {
             } else if account.currentBalance < 100 && account.currentBalance >= 0
                         && account.type != .creditCard && account.type != .loan {
                 items.append(AppNotification(
+                    stableKey: "low-balance-\(account.name)",
                     icon: "exclamationmark.circle",
                     iconColor: .orange,
                     title: "\(account.name) balance is low",
@@ -135,6 +159,7 @@ struct NotificationCenterView: View {
         for account in accounts where account.type == .creditCard && !account.isArchived {
             if abs(account.currentBalance) > 1000 {
                 items.append(AppNotification(
+                    stableKey: "cc-high-\(account.name)",
                     icon: "creditcard.fill",
                     iconColor: .orange,
                     title: "\(account.name) balance is high",
@@ -149,6 +174,7 @@ struct NotificationCenterView: View {
         let pausedCount = scheduled.filter { $0.isSubscription && !$0.isActive }.count
         if pausedCount > 0 {
             items.append(AppNotification(
+                stableKey: "paused-subs",
                 icon: "pause.circle",
                 iconColor: .secondary,
                 title: "\(pausedCount) paused subscription\(pausedCount == 1 ? "" : "s")",
@@ -158,7 +184,9 @@ struct NotificationCenterView: View {
             ))
         }
 
-        return items.sorted { $0.priority > $1.priority }
+        return items
+            .filter { !dismissed.contains($0.stableKey) }
+            .sorted { $0.priority > $1.priority }
     }
 
     var notificationCount: Int {
@@ -196,6 +224,13 @@ struct NotificationCenterView: View {
                         Section {
                             ForEach(urgent) { notif in
                                 notificationRow(notif)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            withAnimation { dismissNotification(notif) }
+                                        } label: {
+                                            Label("Dismiss", systemImage: "xmark.circle")
+                                        }
+                                    }
                             }
                         } header: {
                             Label("Urgent", systemImage: "exclamationmark.triangle.fill")
@@ -207,6 +242,13 @@ struct NotificationCenterView: View {
                         Section {
                             ForEach(upcoming) { notif in
                                 notificationRow(notif)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            withAnimation { dismissNotification(notif) }
+                                        } label: {
+                                            Label("Dismiss", systemImage: "xmark.circle")
+                                        }
+                                    }
                             }
                         } header: {
                             Label("Upcoming", systemImage: "clock")
@@ -217,6 +259,13 @@ struct NotificationCenterView: View {
                         Section {
                             ForEach(info) { notif in
                                 notificationRow(notif)
+                                    .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                        Button(role: .destructive) {
+                                            withAnimation { dismissNotification(notif) }
+                                        } label: {
+                                            Label("Dismiss", systemImage: "xmark.circle")
+                                        }
+                                    }
                             }
                         } header: {
                             Label("Info", systemImage: "info.circle")
@@ -232,6 +281,15 @@ struct NotificationCenterView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
+                }
+                if !dismissedKeys.isEmpty {
+                    ToolbarItem(placement: .automatic) {
+                        Button {
+                            withAnimation { restoreAll() }
+                        } label: {
+                            Label("Restore Dismissed", systemImage: "arrow.counterclockwise")
+                        }
+                    }
                 }
             }
         }
