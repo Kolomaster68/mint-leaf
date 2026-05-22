@@ -11,6 +11,7 @@ struct SubscriptionCalendarView: View {
     @State private var selectedDay: DateComponents?
     @State private var editingItem: ScheduledTransaction?
     @State private var showingStats = false
+    @State private var showingAddSheet = false
     @State private var addingOnDay: DateComponents?
     @State private var accumulatedScroll: CGFloat = 0
     @State private var drawerVisible = false
@@ -152,8 +153,8 @@ struct SubscriptionCalendarView: View {
         .sheet(isPresented: $showingStats) {
             SubscriptionStatsSheet(subscriptions: subscriptions)
         }
-        .sheet(item: $addingOnDay) { dc in
-            AddSubscriptionSheet(dayComponents: dc)
+        .sheet(isPresented: $showingAddSheet) {
+            AddSubscriptionSheet(dayComponents: addingOnDay ?? DateComponents())
         }
     }
 
@@ -418,6 +419,7 @@ struct SubscriptionCalendarView: View {
             // Add button
             Button {
                 addingOnDay = day
+                showingAddSheet = true
             } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "plus.circle.fill")
@@ -956,10 +958,31 @@ struct ScrollWheelView: NSViewRepresentable {
 
 class ScrollWheelNSView: NSView {
     var handler: ((CGFloat) -> Void)?
+    private var monitor: Any?
 
-    override func scrollWheel(with event: NSEvent) {
-        // deltaY > 0 means scrolling down (fingers moving down on trackpad)
-        handler?(event.scrollingDeltaY)
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil // Let all clicks pass through to SwiftUI buttons beneath
+    }
+
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard monitor == nil else { return }
+        monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
+            guard let self = self, self.window != nil else { return event }
+            let loc = self.convert(event.locationInWindow, from: nil)
+            if self.bounds.contains(loc) {
+                self.handler?(event.scrollingDeltaY)
+            }
+            return event
+        }
+    }
+
+    override func removeFromSuperview() {
+        if let monitor = monitor {
+            NSEvent.removeMonitor(monitor)
+            self.monitor = nil
+        }
+        super.removeFromSuperview()
     }
 }
 
