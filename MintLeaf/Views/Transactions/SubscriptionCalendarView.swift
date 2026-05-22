@@ -28,13 +28,13 @@ struct SubscriptionCalendarView: View {
     }
 
     private var monthlyTotal: Decimal {
-        subscriptions.reduce(Decimal.zero) { $0 + $1.monthlyEquivalent }
+        subscriptions.reduce(Decimal.zero) { $0 + $1.convertedMonthlyEquivalent }
     }
 
     private var topCategory: (name: String, total: Decimal)? {
         let grouped = Dictionary(grouping: subscriptions) { $0.category?.name ?? "Uncategorised" }
         let totals = grouped.mapValues { items in
-            items.reduce(Decimal.zero) { $0 + $1.monthlyEquivalent }
+            items.reduce(Decimal.zero) { $0 + $1.convertedMonthlyEquivalent }
         }
         return totals.max(by: { $0.value < $1.value }).map { ($0.key, $0.value) }
     }
@@ -91,7 +91,7 @@ struct SubscriptionCalendarView: View {
     }
 
     private func daySpend(_ dc: DateComponents) -> Decimal {
-        subscriptionsForDay(dc).reduce(Decimal.zero) { $0 + abs($1.amount) }
+        subscriptionsForDay(dc).reduce(Decimal.zero) { $0 + abs($1.convertedAmount) }
     }
 
     private var isCurrentMonth: Bool {
@@ -327,7 +327,7 @@ struct SubscriptionCalendarView: View {
                     .font(.title3.weight(.semibold))
                 Spacer()
                 if !subs.isEmpty {
-                    Text(CurrencyFormatter.shared.format(subs.reduce(Decimal.zero) { $0 + abs($1.amount) }))
+                    Text(CurrencyFormatter.shared.format(subs.reduce(Decimal.zero) { $0 + abs($1.convertedAmount) }))
                         .font(.title3.weight(.semibold).monospacedDigit())
                         .foregroundStyle(AppTheme.accent(for: scheme))
                 }
@@ -366,9 +366,16 @@ struct SubscriptionCalendarView: View {
 
                             Spacer()
 
-                            Text(CurrencyFormatter.shared.format(abs(sub.amount)))
-                                .font(.body.monospacedDigit())
-                                .foregroundStyle(.primary)
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(CurrencyFormatter.shared.format(abs(sub.amount), currency: sub.currency))
+                                    .font(.body.monospacedDigit())
+                                    .foregroundStyle(.primary)
+                                if sub.currency != ExchangeRateService.shared.preferredCurrency {
+                                    Text("~\(CurrencyFormatter.shared.format(abs(sub.convertedAmount)))")
+                                        .font(.caption2.monospacedDigit())
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
                         }
                         .padding(.vertical, 4)
                         .opacity(sub.isActive ? 1 : 0.5)
@@ -488,7 +495,7 @@ struct SubscriptionCalendarView: View {
 
                         Spacer()
 
-                        Text(CurrencyFormatter.shared.format(abs(sub.amount)))
+                        Text(CurrencyFormatter.shared.format(abs(sub.amount), currency: sub.currency))
                             .font(.subheadline.monospacedDigit())
                             .foregroundStyle(.tertiary)
                     }
@@ -681,6 +688,7 @@ struct AddSubscriptionSheet: View {
 
     @State private var name = ""
     @State private var amount = ""
+    @State private var currency = UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
     @State private var frequency: RecurrenceFrequency = .monthly
     @State private var startDate = Date()
     @State private var hasEndDate = false
@@ -712,6 +720,26 @@ struct AddSubscriptionSheet: View {
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
+                    }
+
+                    Picker("Currency", selection: $currency) {
+                        ForEach(SupportedCurrencies.all, id: \.code) { c in
+                            Text("\(c.flag) \(c.code)").tag(c.code)
+                        }
+                    }
+
+                    if currency != (UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"),
+                       let value = Decimal(string: amount), value > 0 {
+                        let preferred = UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
+                        let converted = ExchangeRateService.shared.convert(value, from: currency, to: preferred)
+                        HStack {
+                            Image(systemName: "arrow.triangle.swap")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text("Approx. \(CurrencyFormatter.shared.format(converted, currency: preferred))")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
 
                     Picker("Payment Schedule", selection: $frequency) {
@@ -755,6 +783,17 @@ struct AddSubscriptionSheet: View {
                     } label: {
                         Label("Pay with", systemImage: "creditcard")
                     }
+
+                    if selectedAccount == nil {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+                            Text("An account is required for subscriptions to auto-charge")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 Section("Notes") {
@@ -773,11 +812,12 @@ struct AddSubscriptionSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") { save() }
-                        .disabled(name.isEmpty || amount.isEmpty)
+                        .disabled(name.isEmpty || amount.isEmpty || selectedAccount == nil)
                 }
             }
             .onAppear {
-                if let date = Calendar.current.date(from: dayComponents) {
+                if let date = Calendar.current.date(from: dayComponents),
+                   Calendar.current.component(.year, from: date) >= 2000 {
                     startDate = date
                 }
             }
@@ -796,7 +836,8 @@ struct AddSubscriptionSheet: View {
             nextDate: startDate,
             account: selectedAccount,
             category: selectedCategory,
-            isSubscription: true
+            isSubscription: true,
+            currency: currency
         )
         sub.notes = notes
         if hasEndDate { sub.endDate = endDate }
@@ -819,7 +860,7 @@ struct SubscriptionStatsSheet: View {
     let subscriptions: [ScheduledTransaction]
 
     private var monthlyTotal: Decimal {
-        subscriptions.reduce(Decimal.zero) { $0 + $1.monthlyEquivalent }
+        subscriptions.reduce(Decimal.zero) { $0 + $1.convertedMonthlyEquivalent }
     }
 
     private var yearlyTotal: Decimal {
@@ -828,12 +869,12 @@ struct SubscriptionStatsSheet: View {
 
     private var byCategory: [(name: String, color: String, total: Decimal)] {
         let grouped = Dictionary(grouping: subscriptions) { $0.category?.name ?? "Other" }
-        return grouped.map { (name: $0.key, color: $0.value.first?.category?.colorHex ?? "888888", total: $0.value.reduce(Decimal.zero) { $0 + $1.monthlyEquivalent }) }
+        return grouped.map { (name: $0.key, color: $0.value.first?.category?.colorHex ?? "888888", total: $0.value.reduce(Decimal.zero) { $0 + $1.convertedMonthlyEquivalent }) }
             .sorted { $0.total > $1.total }
     }
 
     private var ranked: [ScheduledTransaction] {
-        subscriptions.sorted { $0.monthlyEquivalent > $1.monthlyEquivalent }
+        subscriptions.sorted { $0.convertedMonthlyEquivalent > $1.convertedMonthlyEquivalent }
     }
 
     var body: some View {
@@ -902,9 +943,9 @@ struct SubscriptionStatsSheet: View {
                             }
                             Spacer()
                             VStack(alignment: .trailing, spacing: 1) {
-                                Text(CurrencyFormatter.shared.format(abs(sub.amount)))
+                                Text(CurrencyFormatter.shared.format(abs(sub.amount), currency: sub.currency))
                                     .font(.subheadline.monospacedDigit())
-                                Text(CurrencyFormatter.shared.format(sub.monthlyEquivalent) + "/mo")
+                                Text(CurrencyFormatter.shared.format(sub.convertedMonthlyEquivalent) + "/mo")
                                     .font(.caption2.monospacedDigit())
                                     .foregroundStyle(.tertiary)
                             }

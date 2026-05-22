@@ -12,6 +12,7 @@ final class ScheduledTransaction {
     var endDate: Date?
     var isActive: Bool
     var isSubscription: Bool
+    var currency: String
 
     @Relationship
     var account: Account?
@@ -38,6 +39,16 @@ final class ScheduledTransaction {
         monthlyEquivalent * 12
     }
 
+    /// Amount converted to the user's preferred currency
+    var convertedAmount: Decimal {
+        ExchangeRateService.shared.convert(amount, from: currency, to: ExchangeRateService.shared.preferredCurrency)
+    }
+
+    /// Monthly equivalent in the user's preferred currency
+    var convertedMonthlyEquivalent: Decimal {
+        ExchangeRateService.shared.convert(monthlyEquivalent, from: currency, to: ExchangeRateService.shared.preferredCurrency)
+    }
+
     init(
         amount: Decimal,
         title: String,
@@ -45,7 +56,8 @@ final class ScheduledTransaction {
         nextDate: Date,
         account: Account? = nil,
         category: Category? = nil,
-        isSubscription: Bool = false
+        isSubscription: Bool = false,
+        currency: String? = nil
     ) {
         self.id = UUID()
         self.amount = amount
@@ -55,6 +67,7 @@ final class ScheduledTransaction {
         self.nextDate = nextDate
         self.isActive = true
         self.isSubscription = isSubscription
+        self.currency = currency ?? UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
         self.account = account
         self.category = category
         self.generatedTransactions = []

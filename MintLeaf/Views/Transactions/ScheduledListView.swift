@@ -246,6 +246,7 @@ struct NewScheduledSheet: View {
 
     @State private var title = ""
     @State private var amount = ""
+    @State private var currency = UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
     @State private var isExpense = true
     @State private var frequency: RecurrenceFrequency = .monthly
     @State private var nextDate = Date()
@@ -267,6 +268,11 @@ struct NewScheduledSheet: View {
                         .keyboardType(.decimalPad)
                         #endif
                         .onChange(of: amount) { _, _ in checkSubscription() }
+                    Picker("Currency", selection: $currency) {
+                        ForEach(SupportedCurrencies.all, id: \.code) { c in
+                            Text("\(c.flag) \(c.code)").tag(c.code)
+                        }
+                    }
                     Picker("Type", selection: $isExpense) {
                         Text("Expense").tag(true)
                         Text("Income").tag(false)
@@ -295,6 +301,17 @@ struct NewScheduledSheet: View {
                         Text("None").tag(nil as Category?)
                         ForEach(categories.filter { $0.isIncome == !isExpense }) { cat in
                             Label(cat.name, systemImage: cat.icon).tag(cat as Category?)
+                        }
+                    }
+
+                    if isSubscription && selectedAccount == nil {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                                .font(.caption)
+                            Text("An account is required for subscriptions to auto-charge")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -331,13 +348,14 @@ struct NewScheduledSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Save" : "Add") { save() }
-                        .disabled(title.isEmpty || amount.isEmpty)
+                        .disabled(title.isEmpty || amount.isEmpty || (isSubscription && selectedAccount == nil))
                 }
             }
             .onAppear {
                 if let editing {
                     title = editing.title
                     amount = "\(abs(editing.amount))"
+                    currency = editing.currency
                     isExpense = editing.amount < 0
                     frequency = editing.frequency
                     nextDate = editing.nextDate
@@ -365,6 +383,7 @@ struct NewScheduledSheet: View {
         if let editing {
             editing.title = title
             editing.amount = signed
+            editing.currency = currency
             editing.frequency = frequency
             editing.nextDate = nextDate
             editing.account = selectedAccount
@@ -378,7 +397,8 @@ struct NewScheduledSheet: View {
                 nextDate: nextDate,
                 account: selectedAccount,
                 category: selectedCategory,
-                isSubscription: isSubscription
+                isSubscription: isSubscription,
+                currency: currency
             )
             context.insert(s)
         }

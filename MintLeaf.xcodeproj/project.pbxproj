@@ -15,6 +15,8 @@
 		12BD1477E2979EAD26A25291 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 073E7F3B5A9437A6519CC7E5 /* InsightsView.swift */; };
 		19670C541A41C7EDA9A1507D /* PrivacyDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B7EAF62887A709BF79C7E /* PrivacyDashboardView.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E3 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */; };
+		E1B2C3D4E5F6A7B8C9D0E1F5 /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F6A7B8C9D0E1F4 /* ExchangeRateService.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F7 /* ScheduledTransactionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F8 /* ScheduledTransactionProcessor.swift */; };
 		1A735A4FDAB39892B7822CF3 /* TutorialEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 011BDE0568F617717E4BF168 /* TutorialEngine.swift */; };
 		1DCBD48899712CD15DD2CE02 /* CategoryRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE78ECFFABDBAD2FDFEA52E3 /* CategoryRule.swift */; };
 		1F1192AF97BAF7E9DE335E0A /* RulesEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFD76ABAEA44586D185B3F8E /* RulesEngine.swift */; };
@@ -67,6 +69,8 @@
 		9E6D25C95A96190E05FA56DB /* AutoCategorizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 268932BDB8DAF154AAB68726 /* AutoCategorizer.swift */; };
 		A2954109A2B904AE5D5B4390 /* PDFImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0721006D808100F736805DBD /* PDFImportView.swift */; };
 		F1A2B3C4D5E6F7A8B9C0D1E4 /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */; };
+		E1B2C3D4E5F6A7B8C9D0E1F6 /* ExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B2C3D4E5F6A7B8C9D0E1F4 /* ExchangeRateService.swift */; };
+		A1B2C3D4E5F6A7B8C9D0E1F9 /* ScheduledTransactionProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F8 /* ScheduledTransactionProcessor.swift */; };
 		A29D41FF4C1D6A6B792513A4 /* TutorialEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 011BDE0568F617717E4BF168 /* TutorialEngine.swift */; };
 		A362838076DEC1639466F715 /* BudgetListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 764948207F06C157B91536FB /* BudgetListView.swift */; };
 		A679674B68C885A691815591 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92367A671E7BF116273C26EF /* WelcomeView.swift */; };
@@ -123,6 +127,8 @@
 
 /* Begin PBXFileReference section */
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		E1B2C3D4E5F6A7B8C9D0E1F4 /* ExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExchangeRateService.swift; sourceTree = "<group>"; };
+		A1B2C3D4E5F6A7B8C9D0E1F8 /* ScheduledTransactionProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduledTransactionProcessor.swift; sourceTree = "<group>"; };
 		011BDE0568F617717E4BF168 /* TutorialEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialEngine.swift; sourceTree = "<group>"; };
 		0721006D808100F736805DBD /* PDFImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFImportView.swift; sourceTree = "<group>"; };
 		073E7F3B5A9437A6519CC7E5 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
@@ -252,6 +258,8 @@
 				AFF6E9D2D9D1FDD2F1155F2F /* SampleDataGenerator.swift */,
 				011BDE0568F617717E4BF168 /* TutorialEngine.swift */,
 				F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */,
+				E1B2C3D4E5F6A7B8C9D0E1F4 /* ExchangeRateService.swift */,
+				A1B2C3D4E5F6A7B8C9D0E1F8 /* ScheduledTransactionProcessor.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -505,6 +513,8 @@
 				84FC39E979C24B5F1DE96302 /* TransactionsView.swift in Sources */,
 				C16A8A05C40F030F5C170492 /* TrendsView.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E3 /* UpdateChecker.swift in Sources */,
+				E1B2C3D4E5F6A7B8C9D0E1F5 /* ExchangeRateService.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F7 /* ScheduledTransactionProcessor.swift in Sources */,
 				1A735A4FDAB39892B7822CF3 /* TutorialEngine.swift in Sources */,
 				C52155E69A9E94212DE94979 /* TutorialOverlay.swift in Sources */,
 				478C56143F92B3ADDF184077 /* View+SheetForm.swift in Sources */,
@@ -567,6 +577,8 @@
 				BF63D85BE0F42DCD7E402CA0 /* TransactionsView.swift in Sources */,
 				61031A2F4A3EE5115F08D1D2 /* TrendsView.swift in Sources */,
 				F1A2B3C4D5E6F7A8B9C0D1E4 /* UpdateChecker.swift in Sources */,
+				E1B2C3D4E5F6A7B8C9D0E1F6 /* ExchangeRateService.swift in Sources */,
+				A1B2C3D4E5F6A7B8C9D0E1F9 /* ScheduledTransactionProcessor.swift in Sources */,
 				A29D41FF4C1D6A6B792513A4 /* TutorialEngine.swift in Sources */,
 				CF7F8953815F274A0FB3140C /* TutorialOverlay.swift in Sources */,
 				B72C4E72DE0BDD4944499F9B /* View+SheetForm.swift in Sources */,
@@ -711,7 +723,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -770,7 +782,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
