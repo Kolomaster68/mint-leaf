@@ -15,7 +15,9 @@ struct PDFImportView: View {
     @State private var showingFilePicker = true
     @State private var errorMessage: String?
     @State private var importCount = 0
+    @State private var duplicatesSkipped = 0
     @State private var didImport = false
+    @State private var detectDuplicates = true
 
     var body: some View {
         NavigationStack {
@@ -126,6 +128,9 @@ struct PDFImportView: View {
                 Button("Deselect All") {
                     selectedRows.removeAll()
                 }
+                Spacer()
+                Toggle("Detect duplicates", isOn: $detectDuplicates)
+                    .toggleStyle(.checkbox)
             }
             .padding(.horizontal)
         }
@@ -175,6 +180,10 @@ struct PDFImportView: View {
             Text("Import Complete")
                 .font(.title2.bold())
             Text("\(importCount) transactions imported from PDF")
+            if duplicatesSkipped > 0 {
+                Text("\(duplicatesSkipped) duplicates skipped")
+                    .foregroundStyle(.orange)
+            }
             Button("Done") { dismiss() }
                 .buttonStyle(.borderedProminent)
         }
@@ -198,17 +207,31 @@ struct PDFImportView: View {
     private func performImport() {
         guard let statement = parsedStatement else { return }
         var count = 0
+        var dupes = 0
+        let existingTransactions = account.transactions
 
         for index in selectedRows.sorted() {
             let parsed = statement.transactions[index]
             let amount = parsed.amount ?? 0
             let title = MerchantNormalizer.normalize(parsed.title)
             let transaction = Transaction(
-                amount: amount < 0 ? amount : -amount,
+                amount: amount,
                 title: title,
                 date: parsed.date ?? Date(),
                 account: account
             )
+
+            if detectDuplicates {
+                let matches = DuplicateDetector.findDuplicates(
+                    incoming: [transaction],
+                    existing: existingTransactions
+                )
+                if !matches.isEmpty {
+                    dupes += 1
+                    continue
+                }
+            }
+
             context.insert(transaction)
             count += 1
         }
@@ -226,6 +249,7 @@ struct PDFImportView: View {
         )
 
         importCount = count
+        duplicatesSkipped = dupes
         didImport = true
     }
 }

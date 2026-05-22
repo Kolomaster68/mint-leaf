@@ -36,6 +36,9 @@ final class PDFStatementParser {
             throw ParserError.noTextContent
         }
 
+        // Extract the statement year BEFORE parsing so parseDate can use it
+        statementYear = extractStatementYear(from: fullText)
+
         // Strategy A: position-aware extraction (reconstructs table columns)
         var transactions = parseWithPositions(document: document)
 
@@ -285,25 +288,42 @@ final class PDFStatementParser {
 
         guard !pairs.isEmpty else { return [] }
 
+        // Find where the block of consecutive amounts starts (to avoid
+        // including them in the last entry's description)
+        let amtBlockPattern = #"(\d{1,3}(?:,\d{3})*\.\d{2}\s*(?:CR)?\s*){3,}"#
+        var amountBlockStart = text.endIndex
+        if let blockRegex = try? NSRegularExpression(pattern: amtBlockPattern, options: .caseInsensitive) {
+            let fullRange = NSRange(text.startIndex..., in: text)
+            // Find the last long match of consecutive amounts
+            let blockMatches = blockRegex.matches(in: text, range: fullRange)
+            if let lastBlock = blockMatches.last,
+               let swiftRange = Range(lastBlock.range, in: text) {
+                amountBlockStart = swiftRange.lowerBound
+            }
+        }
+
         // Extract description between entries
         var entries: [(date: String, description: String)] = []
         for (idx, pair) in pairs.enumerated() {
             let descStart = text.index(text.startIndex, offsetBy: pair.descStart, limitedBy: text.endIndex) ?? text.endIndex
-            let descEnd: String.Index
+            var descEnd: String.Index
             if idx + 1 < pairs.count {
                 descEnd = text.index(text.startIndex, offsetBy: pairs[idx + 1].receivedLoc, limitedBy: text.endIndex) ?? text.endIndex
             } else {
-                descEnd = text.endIndex
+                // Last entry: stop at the amount block, not end of text
+                descEnd = amountBlockStart
             }
+            // Safety: don't go backwards
+            if descEnd < descStart { descEnd = descStart }
             let desc = cleanTitle(String(text[descStart..<descEnd]))
             if !desc.isEmpty { entries.append((date: pair.transDate, description: desc)) }
         }
 
-        // Find amounts: look for a block of consecutive decimal numbers
+        // Find amounts: look for amounts both inline in descriptions and in a separate block
         let amountPattern = #"(\d{1,3}(?:,\d{3})*\.\d{2})\s*(CR)?"#
         guard let amountRegex = try? NSRegularExpression(pattern: amountPattern, options: .caseInsensitive) else { return [] }
 
-        // Collect all amounts in the text, then take the consecutive block that matches our entry count
+        // Collect all amounts in the text with their positions
         var allAmounts: [(value: Decimal, isCredit: Bool, location: Int)] = []
         let amountMatches = amountRegex.matches(in: text, range: range)
         for match in amountMatches {
@@ -316,48 +336,82 @@ final class PDFStatementParser {
             }
         }
 
-        // Find the best consecutive run of amounts that matches entry count
-        var amounts: [(Decimal, Bool)] = []
-        let target = entries.count
-        if allAmounts.count >= target {
-            // Try to find a run of `target` amounts where they're near each other
-            for startIdx in 0...(allAmounts.count - target) {
-                let slice = Array(allAmounts[startIdx..<(startIdx + target)])
-                // Check they're reasonably consecutive (within ~200 chars of each other)
-                var consecutive = true
-                for j in 1..<slice.count {
-                    if slice[j].location - slice[j-1].location > 200 {
-                        consecutive = false
-                        break
-                    }
+        // HSBC-style: some amounts appear inline within the description text,
+        // and the rest are listed in a separate block at the end of the page.
+        // Strategy: first extract any inline amount from each entry's description,
+        // then fill remaining entries from the block amounts in order.
+
+        // Find which entries have an inline amount (at the end of their description)
+        let inlineAmountPattern = #"(\d{1,3}(?:,\d{3})*\.\d{2})\s*(CR)?\s*$"#
+        let inlineRegex = try? NSRegularExpression(pattern: inlineAmountPattern, options: .caseInsensitive)
+
+        // Determine the last entry's text end location to separate inline vs block amounts
+        let lastEntryEnd = pairs.last.map { $0.descStart + 200 } ?? 0 // approximate
+
+        // Separate amounts into inline (within entry text region) and block (after all entries)
+        // Block amounts are clustered together with small gaps between them
+        var blockAmounts: [(value: Decimal, isCredit: Bool)] = []
+        if allAmounts.count >= 3 {
+            // Find the largest cluster of closely-spaced amounts (within 20 chars of each other)
+            var bestStart = 0, bestLen = 0
+            var curStart = 0
+            for i in 1..<allAmounts.count {
+                if allAmounts[i].location - allAmounts[i-1].location > 30 {
+                    if i - curStart > bestLen { bestStart = curStart; bestLen = i - curStart }
+                    curStart = i
                 }
-                if consecutive {
-                    amounts = slice.map { ($0.value, $0.isCredit) }
-                    break
-                }
+            }
+            if allAmounts.count - curStart > bestLen { bestStart = curStart; bestLen = allAmounts.count - curStart }
+            if bestLen >= 3 {
+                blockAmounts = Array(allAmounts[bestStart..<(bestStart + bestLen)]).map { ($0.value, $0.isCredit) }
             }
         }
 
-        // If no good run found, just take the last N amounts
-        if amounts.isEmpty && allAmounts.count >= target {
-            amounts = allAmounts.suffix(target).map { ($0.value, $0.isCredit) }
-        }
-
-        // Pair entries with amounts
+        // For each entry, check if it has an inline amount; if not, pull from block
         var transactions: [ParsedTransaction] = []
-        let count = min(entries.count, amounts.count)
-        for idx in 0..<count {
-            let entry = entries[idx]
-            let (amount, isCredit) = amounts[idx]
-            let signedAmount = isCredit ? amount : -amount
+        var blockIdx = 0
 
-            transactions.append(ParsedTransaction(
-                date: parseDate(entry.date),
-                title: entry.description,
-                amount: signedAmount,
-                balance: nil,
-                rawLine: "\(entry.date) \(entry.description)"
-            ))
+        for entry in entries {
+            var amount: Decimal? = nil
+            var isCredit = false
+            var cleanDesc = entry.description
+
+            // Check for inline amount at end of description
+            if let inlineRegex = inlineRegex {
+                let descRange = NSRange(entry.description.startIndex..., in: entry.description)
+                if let inlineMatch = inlineRegex.firstMatch(in: entry.description, range: descRange),
+                   let numRange = Range(inlineMatch.range(at: 1), in: entry.description) {
+                    let numStr = String(entry.description[numRange]).replacingOccurrences(of: ",", with: "")
+                    isCredit = inlineMatch.range(at: 2).location != NSNotFound
+                    if let val = Decimal(string: numStr) {
+                        amount = val
+                        // Remove the inline amount from the description
+                        if let fullRange = Range(inlineMatch.range, in: entry.description) {
+                            cleanDesc = String(entry.description[..<fullRange.lowerBound])
+                                .trimmingCharacters(in: .whitespacesAndNewlines)
+                                .trimmingCharacters(in: CharacterSet(charactersIn: "- .,;:"))
+                        }
+                    }
+                }
+            }
+
+            // If no inline amount, take from block
+            if amount == nil && blockIdx < blockAmounts.count {
+                amount = blockAmounts[blockIdx].0
+                isCredit = blockAmounts[blockIdx].1
+                blockIdx += 1
+            }
+
+            if let amt = amount {
+                let signedAmount = isCredit ? amt : -amt
+                transactions.append(ParsedTransaction(
+                    date: parseDate(entry.date),
+                    title: cleanTitle(cleanDesc),
+                    amount: signedAmount,
+                    balance: nil,
+                    rawLine: "\(entry.date) \(entry.description)"
+                ))
+            }
         }
 
         return transactions
@@ -475,9 +529,14 @@ final class PDFStatementParser {
 
     private static func findDate(in text: String) -> TextMatch? {
         let patterns = [
+            // Full dates with year
             #"\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4}"#,
             #"\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4}"#,
             #"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2},?\s+\d{2,4}"#,
+            // Dates WITHOUT year (common in UK statements)
+            #"\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*"#,
+            #"(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}"#,
+            #"\d{1,2}[/\-\.]\d{1,2}(?![/\-\.]\d)"#,
         ]
         for pattern in patterns {
             guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive) else { continue }
@@ -538,39 +597,97 @@ final class PDFStatementParser {
         return amount
     }
 
+    /// Year hint extracted from the statement text (e.g. "Statement Date: 15 May 2026")
+    nonisolated(unsafe) static var statementYear: Int?
+
     static func parseDate(_ s: String) -> Date? {
-        let formats = [
-            "dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd", "dd-MM-yyyy", "dd.MM.yyyy",
-            "dd/MM/yy", "MM/dd/yy", "dd-MM-yy",
-            "dd MMM yyyy", "dd MMMM yyyy", "dd MMM yy",
+        let currentYear = Calendar.current.component(.year, from: Date())
+        let yearToUse = statementYear ?? currentYear
+
+        // Two-digit year formats FIRST so "17 Jan 26" → 2026 not 0026
+        // Then four-digit year formats, then numeric formats
+        let fullFormats = [
+            "dd MMM yy", "dd MMMM yy",
+            "dd MMM yyyy", "dd MMMM yyyy",
             "MMM dd, yyyy", "MMMM dd, yyyy", "MMM dd yyyy",
+            "yyyy-MM-dd",
+            "dd/MM/yyyy", "MM/dd/yyyy", "dd-MM-yyyy", "dd.MM.yyyy",
+            "dd/MM/yy", "MM/dd/yy", "dd-MM-yy",
         ]
-        for format in formats {
+
+        let cal: Calendar = {
+            var c = Calendar(identifier: .gregorian)
+            c.timeZone = TimeZone.current
+            return c
+        }()
+        let twoDigitStart: Date = {
+            var c = DateComponents()
+            c.year = 2000
+            return Calendar.current.date(from: c) ?? Date()
+        }()
+
+        for format in fullFormats {
             let f = DateFormatter()
             f.dateFormat = format
             f.locale = Locale(identifier: "en_GB")
-            var cal = Calendar(identifier: .gregorian)
-            cal.timeZone = TimeZone.current
             f.calendar = cal
-            f.twoDigitStartDate = {
-                var c = DateComponents()
-                c.year = 2000
-                return Calendar.current.date(from: c) ?? Date()
-            }()
-            if let d = f.date(from: s) { return d }
+            f.twoDigitStartDate = twoDigitStart
+            if let d = f.date(from: s) {
+                // Reject dates with year < 2000 (mis-parsed 2-digit years)
+                let year = cal.component(.year, from: d)
+                if year >= 2000 { return d }
+            }
         }
+
         // Retry with en_US locale for US-format dates
         for format in ["MM/dd/yyyy", "MM/dd/yy", "MMM dd, yyyy"] {
             let f = DateFormatter()
             f.dateFormat = format
             f.locale = Locale(identifier: "en_US_POSIX")
-            f.twoDigitStartDate = {
-                var c = DateComponents()
-                c.year = 2000
-                return Calendar.current.date(from: c) ?? Date()
-            }()
-            if let d = f.date(from: s) { return d }
+            f.twoDigitStartDate = twoDigitStart
+            if let d = f.date(from: s) {
+                let year = cal.component(.year, from: d)
+                if year >= 2000 { return d }
+            }
         }
+
+        // Formats WITHOUT year — append the inferred year and retry
+        let noYearFormats: [(parse: String, full: String)] = [
+            ("dd MMM", "dd MMM yyyy"),
+            ("dd MMMM", "dd MMMM yyyy"),
+            ("MMM dd", "MMM dd yyyy"),
+            ("MMMM dd", "MMMM dd yyyy"),
+            ("dd/MM", "dd/MM/yyyy"),
+            ("MM/dd", "MM/dd/yyyy"),
+            ("dd-MM", "dd-MM-yyyy"),
+            ("dd.MM", "dd.MM.yyyy"),
+        ]
+        let trimmed = s.trimmingCharacters(in: .whitespaces)
+        for (_, fullFormat) in noYearFormats {
+            let withYear = "\(trimmed) \(yearToUse)"
+            let f = DateFormatter()
+            f.dateFormat = fullFormat
+            f.locale = Locale(identifier: "en_GB")
+            var cal = Calendar(identifier: .gregorian)
+            cal.timeZone = TimeZone.current
+            f.calendar = cal
+            if let d = f.date(from: withYear) { return d }
+        }
+
+        // Also try "22/05" → "22/05/2026"
+        for sep in ["/", "-", "."] {
+            let parts = trimmed.components(separatedBy: sep)
+            if parts.count == 2 {
+                let withYear = "\(trimmed)\(sep)\(yearToUse)"
+                for format in ["dd\(sep)MM\(sep)yyyy", "MM\(sep)dd\(sep)yyyy"] {
+                    let f = DateFormatter()
+                    f.dateFormat = format
+                    f.locale = Locale(identifier: "en_GB")
+                    if let d = f.date(from: withYear) { return d }
+                }
+            }
+        }
+
         return nil
     }
 
@@ -591,6 +708,28 @@ final class PDFStatementParser {
         }
 
         return cleaned
+    }
+
+    /// Extract a year from statement header text (e.g. "Statement period: 01 Apr 2026 to 30 Apr 2026")
+    private static func extractStatementYear(from text: String) -> Int? {
+        // Look for 4-digit year near keywords like "statement", "period", "date"
+        let header = String(text.prefix(2000)).lowercased()
+        let keywords = ["statement", "period", "date", "from", "to"]
+        guard keywords.contains(where: { header.contains($0) }) else { return nil }
+
+        // Find all 4-digit years in the first portion of text
+        guard let yearRegex = try? NSRegularExpression(pattern: #"\b(20\d{2})\b"#) else { return nil }
+        let range = NSRange(header.startIndex..., in: header)
+        let matches = yearRegex.matches(in: header, range: range)
+
+        for match in matches {
+            if let swiftRange = Range(match.range(at: 1), in: header),
+               let year = Int(header[swiftRange]),
+               year >= 2000 && year <= 2100 {
+                return year
+            }
+        }
+        return nil
     }
 
     private static func detectBank(from text: String) -> String? {
