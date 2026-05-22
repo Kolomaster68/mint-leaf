@@ -30,9 +30,35 @@ struct ExcelImportView: View {
         parsedSheets.first(where: { $0.id == selectedSheetID })
     }
 
-    /// Detect column indices based on header row
+    struct ColumnMap {
+        var date: Int?
+        var title: Int?
+        var amount: Int?
+        var type: Int?
+        var headerRowIndex: Int = 0
+    }
+
+    /// Find the real header row — it may not be the first row (e.g. a title row precedes it).
     private var columnMap: ColumnMap? {
-        guard let sheet = selectedSheet, let headerRow = sheet.rows.first else { return nil }
+        guard let sheet = selectedSheet else { return nil }
+        // Scan the first few rows to find one that contains "date" and "description"/"amount"
+        for (rowIndex, row) in sheet.rows.prefix(5).enumerated() {
+            var map = ColumnMap()
+            map.headerRowIndex = rowIndex
+            for (i, header) in row.enumerated() {
+                let lower = header.lowercased()
+                if lower.contains("date") { map.date = i }
+                else if lower.contains("description") || lower.contains("payee") || lower.contains("title") { map.title = i }
+                else if lower.contains("amount") { map.amount = i }
+                else if lower.contains("type") { map.type = i }
+            }
+            // A valid header must have at least date + one of title/amount
+            if map.date != nil && (map.title != nil || map.amount != nil) {
+                return map
+            }
+        }
+        // Fallback: treat first row as header
+        guard let headerRow = sheet.rows.first else { return nil }
         var map = ColumnMap()
         for (i, header) in headerRow.enumerated() {
             let lower = header.lowercased()
@@ -44,17 +70,10 @@ struct ExcelImportView: View {
         return map
     }
 
-    struct ColumnMap {
-        var date: Int?
-        var title: Int?
-        var amount: Int?
-        var type: Int?
-    }
-
-    /// Data rows (skip header + skip TOTALS row)
+    /// Data rows (skip everything up to and including header row + skip TOTALS rows)
     private var dataRows: [[String]] {
-        guard let sheet = selectedSheet else { return [] }
-        return Array(sheet.rows.dropFirst()).filter { row in
+        guard let sheet = selectedSheet, let map = columnMap else { return [] }
+        return Array(sheet.rows.dropFirst(map.headerRowIndex + 1)).filter { row in
             // Skip totals/summary rows
             let first = row.first?.lowercased() ?? ""
             return !first.contains("total") && !first.isEmpty
@@ -276,10 +295,10 @@ struct ExcelImportView: View {
             parsedSheets = result.sheets
             if let first = parsedSheets.first {
                 selectedSheetID = first.id
-                let rows = Array(first.rows.dropFirst()).filter {
-                    !($0.first?.lowercased().contains("total") ?? true)
+                // Use dataRows count (which now accounts for title rows)
+                DispatchQueue.main.async {
+                    selectedRows = Set(0..<dataRows.count)
                 }
-                selectedRows = Set(0..<rows.count)
             }
         } catch {
             errorMessage = error.localizedDescription
