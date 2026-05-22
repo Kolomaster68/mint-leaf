@@ -12,7 +12,7 @@ final class ScheduledTransaction {
     var endDate: Date?
     var isActive: Bool
     var isSubscription: Bool
-    var currency: String
+    var currency: String = "USD"
 
     @Relationship
     var account: Account?
