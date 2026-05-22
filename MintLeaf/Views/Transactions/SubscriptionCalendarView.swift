@@ -27,14 +27,35 @@ struct SubscriptionCalendarView: View {
         allScheduled.filter { $0.isSubscription && !$0.isActive }
     }
 
+    /// All subscriptions due in the displayed month (with their full amounts)
+    private var subscriptionsThisMonth: [ScheduledTransaction] {
+        var result: [ScheduledTransaction] = []
+        for day in daysInMonth {
+            for sub in subscriptionsForDay(day) {
+                if !result.contains(where: { $0.id == sub.id }) {
+                    result.append(sub)
+                }
+            }
+        }
+        return result
+    }
+
+    /// Total actual spend for the displayed month (full amounts, not monthly equivalents)
     private var monthlyTotal: Decimal {
-        subscriptions.reduce(Decimal.zero) { $0 + $1.convertedMonthlyEquivalent }
+        var total: Decimal = 0
+        for day in daysInMonth {
+            for sub in subscriptionsForDay(day) {
+                total += abs(ExchangeRateService.shared.convert(sub.amount, from: sub.currency, to: ExchangeRateService.shared.preferredCurrency))
+            }
+        }
+        return total
     }
 
     private var topCategory: (name: String, total: Decimal)? {
-        let grouped = Dictionary(grouping: subscriptions) { $0.category?.name ?? "Uncategorised" }
+        let subs = subscriptionsThisMonth
+        let grouped = Dictionary(grouping: subs) { $0.category?.name ?? "Uncategorised" }
         let totals = grouped.mapValues { items in
-            items.reduce(Decimal.zero) { $0 + $1.convertedMonthlyEquivalent }
+            items.reduce(Decimal.zero) { $0 + abs(ExchangeRateService.shared.convert($1.amount, from: $1.currency, to: ExchangeRateService.shared.preferredCurrency)) }
         }
         return totals.max(by: { $0.value < $1.value }).map { ($0.key, $0.value) }
     }
