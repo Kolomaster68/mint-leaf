@@ -33,8 +33,8 @@ struct SearchView: View {
 
         switch filterType {
         case .all: break
-        case .income: results = results.filter { $0.isIncome }
-        case .expenses: results = results.filter { $0.isExpense }
+        case .income: results = results.filter { $0.amount > 0 }
+        case .expenses: results = results.filter { $0.amount < 0 }
         }
 
         return results

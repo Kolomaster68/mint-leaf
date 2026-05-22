@@ -22,8 +22,8 @@ final class Transaction {
     @Relationship(inverse: \ScheduledTransaction.generatedTransactions)
     var scheduledSource: ScheduledTransaction?
 
-    var isExpense: Bool { amount < 0 }
-    var isIncome: Bool { amount > 0 }
+    var isExpense: Bool { amount < 0 && !isTransfer }
+    var isIncome: Bool { amount > 0 && !isTransfer }
     var isTransfer: Bool { transferDestination != nil }
 
     var absoluteAmount: Decimal { abs(amount) }
