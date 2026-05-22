@@ -86,6 +86,7 @@ struct ContentView: View {
         }
         .onAppear {
             seedIfNeeded()
+            ScheduledTransactionProcessor.processOverdue(context: context)
             if shouldStartTutorial {
                 shouldStartTutorial = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
