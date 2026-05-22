@@ -132,25 +132,31 @@ struct ContentView: View {
     }
 
     #if os(macOS)
+    @AppStorage("dismissedNotifications") private var dismissedNotifData: Data = Data()
+
     private var notificationBadgeCount: Int {
+        let dismissed = (try? JSONDecoder().decode(Set<String>.self, from: dismissedNotifData)) ?? []
         var count = 0
         let today = Date()
         // Overdue or due within 3 days
         for item in scheduledItems where item.isActive {
-            if item.nextDate <= today { count += 1 }
-            else if item.nextDate <= Calendar.current.date(byAdding: .day, value: 3, to: today) ?? today { count += 1 }
+            if item.nextDate <= today && !dismissed.contains("overdue-\(item.title)") { count += 1 }
+            else if item.nextDate <= Calendar.current.date(byAdding: .day, value: 3, to: today) ?? today
+                        && !dismissed.contains("due-soon-\(item.title)") { count += 1 }
         }
 
         // Budget items over 80%
         for budget in budgets {
             for item in budget.items {
-                if item.progress >= 0.8 { count += 1 }
+                guard let category = item.category else { continue }
+                if item.progress >= 1.0 && !dismissed.contains("budget-exceeded-\(category.name)") { count += 1 }
+                else if item.progress >= 0.8 && !dismissed.contains("budget-warning-\(category.name)") { count += 1 }
             }
         }
 
         // Negative non-credit-card accounts
         for account in accounts where !account.isArchived && account.type != .creditCard {
-            if account.currentBalance < 0 { count += 1 }
+            if account.currentBalance < 0 && !dismissed.contains("negative-\(account.name)") { count += 1 }
         }
 
         return count
