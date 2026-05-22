@@ -28,7 +28,21 @@ struct MintLeafApp: App {
         do {
             container = try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Failed to configure SwiftData: \(error)")
+            // Migration failed — delete corrupt store and retry
+            let storeURL = config.url
+            let related = [
+                storeURL,
+                storeURL.appendingPathExtension("shm"),
+                storeURL.appendingPathExtension("wal"),
+            ]
+            for url in related {
+                try? FileManager.default.removeItem(at: url)
+            }
+            do {
+                container = try ModelContainer(for: schema, configurations: [config])
+            } catch {
+                fatalError("Failed to configure SwiftData after reset: \(error)")
+            }
         }
     }
 
