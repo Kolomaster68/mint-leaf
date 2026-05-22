@@ -18,6 +18,8 @@ struct PDFImportView: View {
     @State private var duplicatesSkipped = 0
     @State private var didImport = false
     @State private var detectDuplicates = true
+    @State private var setOpeningBalance = false
+    @State private var detectedOpeningBalance: Decimal?
 
     var body: some View {
         NavigationStack {
@@ -81,6 +83,41 @@ struct PDFImportView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal)
+            }
+
+            // Opening/closing balance detection
+            if statement.openingBalance != nil || statement.closingBalance != nil {
+                HStack(spacing: 16) {
+                    if let opening = statement.openingBalance {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Opening Balance")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(CurrencyFormatter.shared.format(opening))
+                                .font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    if let closing = statement.closingBalance {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Closing Balance")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Text(CurrencyFormatter.shared.format(closing))
+                                .font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    Spacer()
+                    if let opening = statement.openingBalance, account.transactions.isEmpty {
+                        Toggle("Set as account opening balance", isOn: $setOpeningBalance)
+                            .toggleStyle(.checkbox)
+                            .font(.caption)
+                            .onAppear { detectedOpeningBalance = opening; setOpeningBalance = true }
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 6)
+                .background(Color.secondary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+                .padding(.horizontal)
             }
 
             List {
@@ -247,6 +284,11 @@ struct PDFImportView: View {
             categories: categories,
             rules: rules
         )
+
+        // Set opening balance if detected and toggled on
+        if setOpeningBalance, let opening = detectedOpeningBalance {
+            account.initialBalance = opening
+        }
 
         importCount = count
         duplicatesSkipped = dupes

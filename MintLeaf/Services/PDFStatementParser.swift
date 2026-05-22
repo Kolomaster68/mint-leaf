@@ -6,6 +6,8 @@ struct ParsedStatement {
     let bankName: String?
     let rawText: String
     let pageCount: Int
+    let openingBalance: Decimal?
+    let closingBalance: Decimal?
 }
 
 struct ParsedTransaction {
@@ -56,13 +58,69 @@ final class PDFStatementParser {
         }
 
         let bankName = detectBank(from: fullText)
+        let balances = extractBalances(from: fullText)
 
         return ParsedStatement(
             transactions: transactions,
             bankName: bankName,
             rawText: fullText,
-            pageCount: document.pageCount
+            pageCount: document.pageCount,
+            openingBalance: balances.opening,
+            closingBalance: balances.closing
         )
+    }
+
+    /// Extract opening and closing balances from statement header text.
+    /// Handles formats like:
+    ///   "Opening Balance £84.88"
+    ///   "Previous Balance 160.84"
+    ///   "BALANCE BROUGHT FORWARD 105.91"
+    ///   "Closing Balance £4.71"
+    ///   "New Balance 329.24"
+    ///   "BALANCE CARRIED FORWARD 105.91"
+    private static func extractBalances(from text: String) -> (opening: Decimal?, closing: Decimal?) {
+        // Only look at first portion of text (header area)
+        let header = String(text.prefix(3000))
+        let lines = header.components(separatedBy: .newlines)
+
+        var opening: Decimal?
+        var closing: Decimal?
+
+        let openingPatterns = ["opening balance", "previous balance", "balance brought forward"]
+        let closingPatterns = ["closing balance", "new balance", "balance carried forward", "transaction balance"]
+
+        for line in lines {
+            let lower = line.lowercased().trimmingCharacters(in: .whitespaces)
+
+            for pattern in openingPatterns {
+                if lower.contains(pattern), opening == nil {
+                    if let amount = extractBalanceAmount(from: line) {
+                        opening = amount
+                    }
+                }
+            }
+
+            for pattern in closingPatterns {
+                if lower.contains(pattern), closing == nil {
+                    if let amount = extractBalanceAmount(from: line) {
+                        closing = amount
+                    }
+                }
+            }
+        }
+
+        return (opening, closing)
+    }
+
+    /// Pull the first decimal number from a balance line, e.g. "Opening Balance £84.88" → 84.88
+    private static func extractBalanceAmount(from line: String) -> Decimal? {
+        let pattern = #"[£$€]?\s*(\d{1,3}(?:,\d{3})*\.?\d{0,2})"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let range = NSRange(line.startIndex..., in: line)
+        guard let match = regex.firstMatch(in: line, range: range),
+              let numRange = Range(match.range(at: 1), in: line) else { return nil }
+        let numStr = String(line[numRange]).replacingOccurrences(of: ",", with: "")
+        return Decimal(string: numStr)
     }
 
     // MARK: - Strategy A: Position-aware table reconstruction
