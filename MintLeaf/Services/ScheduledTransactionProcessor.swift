@@ -4,9 +4,13 @@ import SwiftData
 enum ScheduledTransactionProcessor {
     /// Process all overdue scheduled transactions on app launch.
     /// Creates transactions on the linked account and advances nextDate.
+    /// Only creates transactions for the most recent missed occurrence —
+    /// older ones are skipped silently to avoid flooding the account.
     @MainActor
     static func processOverdue(context: ModelContext) {
         let now = Date()
+        // Only create transactions for dates within the last 30 days
+        let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
 
         let descriptor = FetchDescriptor<ScheduledTransaction>(
             predicate: #Predicate { $0.isActive && $0.nextDate <= now },
@@ -16,9 +20,8 @@ enum ScheduledTransactionProcessor {
         guard let overdue = try? context.fetch(descriptor) else { return }
 
         for scheduled in overdue {
-            // Safety: cap iterations to prevent infinite loops from bad data
             var iterations = 0
-            let maxIterations = 1000
+            let maxIterations = 100
 
             while scheduled.nextDate <= now && scheduled.isActive && iterations < maxIterations {
                 iterations += 1
@@ -29,13 +32,14 @@ enum ScheduledTransactionProcessor {
                     break
                 }
 
-                // Create the transaction on the linked account
-                if let account = scheduled.account {
+                // Only create a transaction if the date is recent (within 30 days)
+                // Older dates just get skipped — we advance past them silently
+                if scheduled.nextDate >= cutoff, let account = scheduled.account {
                     let transaction = Transaction(
                         amount: scheduled.amount,
                         title: scheduled.title,
                         date: scheduled.nextDate,
-                        notes: "Auto-charged from scheduled: \(scheduled.frequency.rawValue)",
+                        notes: "Auto-charged: \(scheduled.frequency.rawValue)",
                         category: scheduled.category,
                         account: account
                     )
@@ -47,7 +51,6 @@ enum ScheduledTransactionProcessor {
                 let previous = scheduled.nextDate
                 let next = nextOccurrence(after: previous, frequency: scheduled.frequency)
 
-                // If date didn't actually advance, break to prevent infinite loop
                 if next <= previous {
                     scheduled.nextDate = now
                     break
@@ -56,7 +59,6 @@ enum ScheduledTransactionProcessor {
                 scheduled.nextDate = next
             }
 
-            // If we hit the cap, just jump to now so it doesn't loop again next launch
             if iterations >= maxIterations {
                 scheduled.nextDate = now
             }
