@@ -23,7 +23,7 @@ struct MintLeafApp: App {
         let config = ModelConfiguration(
             "MintLeaf",
             schema: schema,
-            cloudKitDatabase: .automatic
+            cloudKitDatabase: .none
         )
         do {
             container = try ModelContainer(for: schema, configurations: [config])
@@ -62,6 +62,7 @@ struct MintLeafApp: App {
                 #endif
         }
         .modelContainer(container)
+        .commands { AppCommands() }
         #if os(macOS)
 
         Settings {

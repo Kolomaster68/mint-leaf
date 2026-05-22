@@ -72,9 +72,11 @@ struct WelcomeView: View {
                 featureRow(icon: "building.columns", title: "Multiple Accounts", description: "Track checking, savings, credit cards and cash")
                 featureRow(icon: "chart.pie", title: "Budgets", description: "Set spending limits by category and track progress")
                 featureRow(icon: "chart.line.uptrend.xyaxis", title: "Trends & Insights", description: "Visualise spending patterns and cashflow forecasts")
-                featureRow(icon: "clock.arrow.circlepath", title: "Scheduled Transactions", description: "Automate recurring bills and income")
-                featureRow(icon: "wand.and.rays", title: "Smart Categorisation", description: "Rules and auto-categorisation for your transactions")
-                featureRow(icon: "icloud", title: "iCloud Sync", description: "Your data syncs across all your Apple devices")
+                featureRow(icon: "clock.arrow.circlepath", title: "Scheduled Transactions", description: "Automate recurring bills and subscriptions")
+                featureRow(icon: "magnifyingglass", title: "Powerful Search", description: "Find any transaction instantly by name, category or amount")
+                featureRow(icon: "bell.badge", title: "Notifications", description: "Stay on top of due bills, exceeded budgets and overdue items")
+                featureRow(icon: "sterlingsign.circle", title: "Multi-Currency", description: "Support for 39 currencies with automatic formatting")
+                featureRow(icon: "keyboard", title: "Keyboard Shortcuts", description: "Navigate the app quickly with built-in shortcuts")
             }
             .frame(maxWidth: 420)
 

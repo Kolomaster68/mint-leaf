@@ -268,21 +268,39 @@ struct TrendsView: View {
             Divider()
                 .padding(.vertical, 4)
 
-            HStack(spacing: 16) {
-                ForEach(monthlyData.suffix(3), id: \.monthDate) { item in
-                    let net = item.income - item.expenses
+            if timeRange == .allTime || timeRange == .oneYear {
+                HStack {
+                    Spacer()
                     VStack(spacing: 4) {
-                        Text(item.month)
+                        Text(timeRange == .oneYear ? "Year to Date" : "All Time")
                             .font(.caption2)
                             .foregroundStyle(.secondary)
-                        Text((net >= 0 ? "+" : "") + CurrencyFormatter.shared.format(net))
+                        Text((netChange >= 0 ? "+" : "") + CurrencyFormatter.shared.format(netChange))
                             .font(.caption.bold().monospacedDigit())
-                            .foregroundStyle(net >= 0 ? .green : .red)
+                            .foregroundStyle(netChange >= 0 ? .green : .red)
                         Text("net")
-                            .font(.caption2)
+                            .font(.system(size: 9))
                             .foregroundStyle(.tertiary)
                     }
-                    .frame(maxWidth: .infinity)
+                    Spacer()
+                }
+            } else {
+                HStack(spacing: 0) {
+                    ForEach(monthlyData, id: \.monthDate) { item in
+                        let net = item.income - item.expenses
+                        VStack(spacing: 2) {
+                            Text(item.month)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Text((net >= 0 ? "+" : "") + CurrencyFormatter.shared.format(net))
+                                .font(.caption2.bold().monospacedDigit())
+                                .foregroundStyle(net >= 0 ? .green : .red)
+                            Text("net")
+                                .font(.system(size: 9))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                 }
             }
         }

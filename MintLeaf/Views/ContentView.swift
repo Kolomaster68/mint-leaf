@@ -3,13 +3,22 @@ import SwiftData
 
 enum SidebarDestination: Hashable {
     case overview
+    case search
     case account(Account)
     case inbox
-    case budgets
     case trends
     case insights
+    case netWorth
+    case reports
     case scheduled
+    case subscriptions
+    case bills
+    case goals
+    case forecast
+    case budgets
     case rules
+    case tags
+    case importExport
 }
 
 struct ContentView: View {
@@ -18,6 +27,8 @@ struct ContentView: View {
     @Environment(\.appTextScale) private var textScale
     @Query(sort: \Account.sortOrder) private var accounts: [Account]
     @Query private var categories: [Category]
+    @Query(sort: \ScheduledTransaction.nextDate) private var scheduledItems: [ScheduledTransaction]
+    @Query(sort: \Budget.startDate) private var budgets: [Budget]
     @State private var selection: SidebarDestination? = .overview
     @State private var showingNewAccount = false
     @State private var editingAccount: Account?
@@ -25,9 +36,13 @@ struct ContentView: View {
     @AppStorage("biometricLockEnabled") private var biometricEnabled = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("sidebarAccountsCollapsed") private var accountsCollapsed = false
+    @AppStorage("sidebarAnalyticsCollapsed") private var analyticsCollapsed = false
+    @AppStorage("sidebarScheduledCollapsed") private var scheduledCollapsed = false
+    @AppStorage("sidebarPlanningCollapsed") private var planningCollapsed = false
     @AppStorage("sidebarToolsCollapsed") private var toolsCollapsed = false
     @AppStorage("shouldStartTutorial") private var shouldStartTutorial = false
     @State private var isUnlocked = false
+    @State private var showingNotifications = false
     @State private var tutorial = TutorialEngine.shared
 
     var body: some View {
@@ -45,8 +60,13 @@ struct ContentView: View {
     private var mainContent: some View {
         #if os(macOS)
         NavigationSplitView {
-            sidebar
-                .navigationSplitViewColumnWidth(min: 200, ideal: 240)
+            GeometryReader { geo in
+                sidebar
+                    .scaleEffect(textScale, anchor: .topLeading)
+                    .frame(width: geo.size.width / textScale, height: geo.size.height / textScale, alignment: .topLeading)
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+            }
+            .navigationSplitViewColumnWidth(min: 200, ideal: 240 * textScale)
         } detail: {
             GeometryReader { geo in
                 detail
@@ -57,6 +77,9 @@ struct ContentView: View {
             }
         }
         .frame(minWidth: 800, minHeight: 500)
+        .focusedSceneValue(\.sidebarSelection, $selection)
+        .focusedSceneValue(\.showNewAccount, $showingNewAccount)
+        .focusedSceneValue(\.showNotifications, $showingNotifications)
         .tutorialOverlay(tutorial)
         .onChange(of: tutorial.currentStepIndex) { _, _ in
             navigateForTutorialStep()
@@ -108,9 +131,61 @@ struct ContentView: View {
     }
 
     #if os(macOS)
+    private var notificationBadgeCount: Int {
+        var count = 0
+        let today = Date()
+        // Overdue or due within 3 days
+        for item in scheduledItems where item.isActive {
+            if item.nextDate <= today { count += 1 }
+            else if item.nextDate <= Calendar.current.date(byAdding: .day, value: 3, to: today) ?? today { count += 1 }
+        }
+
+        // Budget items over 80%
+        for budget in budgets {
+            for item in budget.items {
+                if item.progress >= 0.8 { count += 1 }
+            }
+        }
+
+        // Negative non-credit-card accounts
+        for account in accounts where !account.isArchived && account.type != .creditCard {
+            if account.currentBalance < 0 { count += 1 }
+        }
+
+        return count
+    }
+
     private var sidebar: some View {
         List {
-            sidebarRow("Overview", icon: "square.grid.2x2", destination: .overview)
+            HStack {
+                sidebarRow("Overview", icon: "square.grid.2x2", destination: .overview)
+                Spacer()
+                Button { showingNotifications = true } label: {
+                    ZStack(alignment: .topTrailing) {
+                        Image(systemName: "bell.fill")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .frame(width: 28, height: 28)
+                        if notificationBadgeCount > 0 {
+                            Text("\(notificationBadgeCount)")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(minWidth: 14, minHeight: 14)
+                                .background(.red, in: Circle())
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+
+            sidebarRow("Search", icon: "magnifyingglass", destination: .search)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+
+            sidebarRow("Inbox", icon: "tray", destination: .inbox)
                 .listRowSeparator(.hidden)
                 .listRowBackground(Color.clear)
 
@@ -138,26 +213,31 @@ struct ContentView: View {
                     }
                 }
             } header: {
-                HStack {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) { accountsCollapsed.toggle() }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("Accounts")
-                                .font(.headline)
-                            Image(systemName: accountsCollapsed ? "chevron.right" : "chevron.down")
-                                .font(.caption.bold())
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { accountsCollapsed.toggle() }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("Accounts")
+                                    .font(.headline)
+                                Image(systemName: accountsCollapsed ? "chevron.right" : "chevron.down")
+                                    .font(.caption.bold())
+                            }
+                            .foregroundStyle(.primary)
                         }
-                        .foregroundStyle(.primary)
-                    }
+                        .buttonStyle(.plain)
+                        Spacer()
+                        Button(action: { showingNewAccount = true }) {
+                            Image(systemName: "plus.circle.fill")
+                                .font(.title3)
+                                .foregroundStyle(AppTheme.accent(for: scheme))
+                        }
                     .buttonStyle(.plain)
-                    Spacer()
-                    Button(action: { showingNewAccount = true }) {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(AppTheme.accent(for: scheme))
-                    }
-                    .buttonStyle(.plain)
+                }
+                    Text(CurrencyFormatter.shared.format(accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.currentBalance }))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -177,13 +257,80 @@ struct ContentView: View {
             }
 
             Section {
-                if !toolsCollapsed {
-                    sidebarRow("Inbox", icon: "tray", destination: .inbox)
-                    sidebarRow("Budgets", icon: "chart.pie", destination: .budgets)
+                if !analyticsCollapsed {
                     sidebarRow("Trends", icon: "chart.line.uptrend.xyaxis", destination: .trends)
                     sidebarRow("Insights", icon: "lightbulb", destination: .insights)
-                    sidebarRow("Scheduled", icon: "clock.arrow.circlepath", destination: .scheduled)
+                    sidebarRow("Net Worth", icon: "banknote", destination: .netWorth)
+                    sidebarRow("Reports", icon: "doc.text.magnifyingglass", destination: .reports)
+                }
+            } header: {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { analyticsCollapsed.toggle() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Analytics")
+                            .font(.headline)
+                        Image(systemName: analyticsCollapsed ? "chevron.right" : "chevron.down")
+                            .font(.caption.bold())
+                    }
+                    .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+
+            Section {
+                if !scheduledCollapsed {
+                    sidebarRow("Overview", icon: "list.bullet", destination: .scheduled)
+                    sidebarRow("Subscriptions", icon: "arrow.triangle.2.circlepath", destination: .subscriptions)
+                    sidebarRow("Bills", icon: "creditcard", destination: .bills)
+                }
+            } header: {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { scheduledCollapsed.toggle() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Scheduled")
+                            .font(.headline)
+                        Image(systemName: scheduledCollapsed ? "chevron.right" : "chevron.down")
+                            .font(.caption.bold())
+                    }
+                    .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+
+            Section {
+                if !planningCollapsed {
+                    sidebarRow("Goals", icon: "target", destination: .goals)
+                    sidebarRow("Forecast", icon: "chart.line.flattrend.xyaxis", destination: .forecast)
+                }
+            } header: {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { planningCollapsed.toggle() }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Planning")
+                            .font(.headline)
+                        Image(systemName: planningCollapsed ? "chevron.right" : "chevron.down")
+                            .font(.caption.bold())
+                    }
+                    .foregroundStyle(.primary)
+                }
+                .buttonStyle(.plain)
+            }
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+
+            Section {
+                if !toolsCollapsed {
+                    sidebarRow("Budgets", icon: "chart.pie", destination: .budgets)
                     sidebarRow("Rules", icon: "wand.and.rays", destination: .rules)
+                    sidebarRow("Tags", icon: "tag", destination: .tags)
+                    sidebarRow("Import / Export", icon: "square.and.arrow.up.on.square", destination: .importExport)
                 }
             } header: {
                 Button {
@@ -201,6 +348,11 @@ struct ContentView: View {
             }
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
+
+            Spacer()
+                .frame(height: 24)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
 
             Section {
                 SettingsLink {
@@ -221,11 +373,28 @@ struct ContentView: View {
             }
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
+
         }
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 6) {
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 28))
+                    .foregroundStyle(AppTheme.accent(for: scheme).opacity(0.12))
+                Text("Mint Leaf")
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(.quaternary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+            .background(AppTheme.sidebarBackground(for: scheme))
+        }
         .background(AppTheme.sidebarBackground(for: scheme))
         .toolbar {}
+        .sheet(isPresented: $showingNotifications) {
+            NotificationCenterView()
+        }
         .sheet(isPresented: $showingNewAccount) {
             NewAccountSheet()
         }
@@ -346,20 +515,38 @@ struct ContentView: View {
         switch selection {
         case .overview, .none:
             DashboardView()
+        case .search:
+            SearchView()
         case .account(let account):
             TransactionsView(account: account)
         case .inbox:
             TransactionInboxView()
-        case .budgets:
-            BudgetListView()
         case .trends:
             TrendsView()
         case .insights:
             InsightsView()
+        case .netWorth:
+            ComingSoonView(title: "Net Worth", icon: "banknote", description: "Track your total net worth across all accounts over time.")
+        case .reports:
+            ComingSoonView(title: "Reports", icon: "doc.text.magnifyingglass", description: "Generate monthly and yearly spending summaries you can export.")
         case .scheduled:
             ScheduledListView()
+        case .subscriptions:
+            SubscriptionCalendarView()
+        case .bills:
+            ScheduledListView(filterMode: .bills)
+        case .goals:
+            ComingSoonView(title: "Goals", icon: "target", description: "Set savings goals and track your progress towards them.")
+        case .forecast:
+            ComingSoonView(title: "Forecast", icon: "chart.line.flattrend.xyaxis", description: "See projected balances based on your scheduled transactions.")
+        case .budgets:
+            BudgetListView()
         case .rules:
             RulesListView()
+        case .tags:
+            ComingSoonView(title: "Tags", icon: "tag", description: "Create custom tags to organise transactions across categories.")
+        case .importExport:
+            ComingSoonView(title: "Import / Export", icon: "square.and.arrow.up.on.square", description: "Import transactions from CSV or export your data.")
         }
     }
     #endif

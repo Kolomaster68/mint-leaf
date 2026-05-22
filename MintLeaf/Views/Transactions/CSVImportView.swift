@@ -74,6 +74,7 @@ struct CSVImportView: View {
 
     private var mappingView: some View {
         Form {
+
             Section("Preview (\(rows.count) rows)") {
                 ScrollView(.horizontal) {
                     VStack(alignment: .leading) {
@@ -119,6 +120,7 @@ struct CSVImportView: View {
                 Toggle("Detect duplicates", isOn: $detectDuplicates)
             }
         }
+        .formStyle(.grouped)
     }
 
     private func resultView(_ result: CSVImportResult) -> some View {

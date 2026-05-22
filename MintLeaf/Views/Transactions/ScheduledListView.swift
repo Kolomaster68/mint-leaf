@@ -9,6 +9,15 @@ struct ScheduledListView: View {
     @State private var editingItem: ScheduledTransaction?
     @State private var filter: ScheduledFilter = .all
 
+    var filterMode: ScheduledFilter?
+
+    init(filterMode: ScheduledFilter? = nil) {
+        self.filterMode = filterMode
+        if let filterMode {
+            _filter = State(initialValue: filterMode)
+        }
+    }
+
     enum ScheduledFilter: String, CaseIterable, Identifiable {
         case all = "All"
         case subscriptions = "Subscriptions"
@@ -147,16 +156,18 @@ struct ScheduledListView: View {
             }
         }
         .premiumList()
-        .navigationTitle("Scheduled")
+        .navigationTitle(filterMode == .bills ? "Bills & Payments" : "Scheduled")
         .toolbar {
-            ToolbarItem(placement: .automatic) {
-                Picker("Filter", selection: $filter) {
-                    ForEach(ScheduledFilter.allCases) { f in
-                        Text(f.rawValue).tag(f)
+            if filterMode == nil {
+                ToolbarItem(placement: .automatic) {
+                    Picker("Filter", selection: $filter) {
+                        ForEach(ScheduledFilter.allCases) { f in
+                            Text(f.rawValue).tag(f)
+                        }
                     }
+                    .pickerStyle(.segmented)
+                    .frame(width: 320)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 320)
             }
             ToolbarItem(placement: .primaryAction) {
                 Button(action: { showingNew = true }) {
@@ -309,6 +320,7 @@ struct NewScheduledSheet: View {
                     }
                 }
             }
+            .formStyle(.grouped)
             .navigationTitle(isEditing ? "Edit Scheduled" : "New Scheduled")
             #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -335,7 +347,7 @@ struct NewScheduledSheet: View {
                 }
             }
         }
-        .macOSSheet(width: 560, height: 550)
+        .macOSSheet(width: 560, height: 620)
     }
 
     private func checkSubscription() {

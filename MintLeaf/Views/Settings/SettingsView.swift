@@ -24,6 +24,7 @@ struct SettingsView: View {
     @State private var categorySearch = ""
     @State private var categoryFilter: CategoryFilter = .all
     @AppStorage("appIconStyle") private var appIconStyle: String = "system"
+    @AppStorage("defaultCurrency") private var defaultCurrency: String = "USD"
     @State private var settingsTab: SettingsTab = .general
     @State private var categorySortKey: CategorySortKey = .name
     @State private var categorySortAscending = true
@@ -345,21 +346,49 @@ struct SettingsView: View {
         #if os(macOS)
         Section("App Icon") {
             HStack(spacing: 16) {
+                Spacer()
                 iconOption("System", style: "system")
                 iconOption("Light", style: "light")
                 iconOption("Dark", style: "dark")
                 iconOption("Custom", style: "custom")
+                Spacer()
             }
             .padding(.vertical, 4)
 
             if appIconStyle == "custom" {
-                Button("Choose Image...") {
-                    chooseCustomIcon()
+                HStack {
+                    Spacer()
+                    Button("Choose Image...") {
+                        chooseCustomIcon()
+                    }
+                    .font(.subheadline)
+                    Spacer()
                 }
-                .font(.subheadline)
             }
         }
         #endif
+
+        Section("Currency") {
+            Picker("Default Currency", selection: $defaultCurrency) {
+                ForEach(SupportedCurrencies.all, id: \.code) { currency in
+                    Text("\(currency.flag) \(currency.code) — \(currency.name)").tag(currency.code)
+                }
+            }
+            .onChange(of: defaultCurrency) { _, newCurrency in
+                for account in accounts {
+                    account.currency = newCurrency
+                }
+            }
+
+            if let info = SupportedCurrencies.info(for: defaultCurrency) {
+                HStack(spacing: 6) {
+                    Text(info.flag)
+                    Text("All amounts displayed in \(info.code)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
 
         Section("Accessibility") {
             VStack(alignment: .leading, spacing: 8) {
@@ -460,11 +489,42 @@ struct SettingsView: View {
         }
 
         Section("About") {
-            HStack {
-                Text("Version")
+            HStack(spacing: 16) {
+                Image(systemName: "leaf.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(AppTheme.accentGradient(for: scheme))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Mint Leaf")
+                        .font(.title3.weight(.semibold))
+                    Text("Version 2.0.0")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Personal finance, beautifully simple.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                }
                 Spacer()
-                Text("1.0.0")
-                    .foregroundStyle(.secondary)
+            }
+            .padding(.vertical, 4)
+
+            HStack {
+                Link(destination: URL(string: "https://github.com/Kolomaster68/mint-leaf")!) {
+                    Label("View on GitHub", systemImage: "link")
+                        .font(.subheadline)
+                }
+                Spacer()
+            }
+
+            HStack(spacing: 4) {
+                Text("Built with")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+                Image(systemName: "heart.fill")
+                    .font(.caption)
+                    .foregroundStyle(.red.opacity(0.6))
+                Text("by Joe Farmer")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
         }
 
@@ -616,14 +676,22 @@ struct SettingsView: View {
                     } else if style == "dark" {
                         iconPreview(isDark: true, size: 56)
                     } else {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(AppTheme.cardBackground(for: scheme))
-                            Image(systemName: "photo.badge.plus")
-                                .font(.title2)
-                                .foregroundStyle(.secondary)
+                        if let data = UserDefaults.standard.data(forKey: "customIconData"),
+                           let nsImage = NSImage(data: data) {
+                            Image(nsImage: nsImage)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 56, height: 56)
+                        } else {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(AppTheme.cardBackground(for: scheme))
+                                Image(systemName: "photo.badge.plus")
+                                    .font(.title2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(width: 56, height: 56)
                         }
-                        .frame(width: 56, height: 56)
                     }
                 }
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -775,7 +843,11 @@ struct SettingsView: View {
             defaults.removeObject(forKey: "shouldStartTutorial")
             defaults.removeObject(forKey: "sidebarAccountsCollapsed")
             defaults.removeObject(forKey: "sidebarToolsCollapsed")
+            defaults.removeObject(forKey: "sidebarAnalyticsCollapsed")
+            defaults.removeObject(forKey: "sidebarScheduledCollapsed")
+            defaults.removeObject(forKey: "sidebarPlanningCollapsed")
             defaults.removeObject(forKey: "appIconStyle")
+            defaults.removeObject(forKey: "defaultCurrency")
             defaults.removeObject(forKey: "customIconData")
             defaults.removeObject(forKey: "textSizeOffset")
             defaults.removeObject(forKey: "highContrastMode")

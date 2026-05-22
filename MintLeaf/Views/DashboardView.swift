@@ -44,11 +44,21 @@ struct DashboardView: View {
         scheduledTransactions.filter { $0.isSubscription && $0.isActive }
     }
 
+    private var upcomingBills: [ScheduledTransaction] {
+        let sevenDays = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
+        return scheduledTransactions
+            .filter { $0.isActive && $0.nextDate <= sevenDays }
+            .sorted { $0.nextDate < $1.nextDate }
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 heroBalance
                 summaryCards
+                if !upcomingBills.isEmpty {
+                    upcomingBillsCard
+                }
                 if !activeSubscriptions.isEmpty {
                     subscriptionsCard
                 }
@@ -136,6 +146,61 @@ struct DashboardView: View {
                 changePercent: changePercent(current: monthExpenses, previous: prevExpenses)
             )
         }
+    }
+
+    private var upcomingBillsCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Upcoming", systemImage: "calendar.badge.clock")
+                    .font(.headline)
+                Spacer()
+                Text("Next 7 days")
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.accent(for: scheme))
+            }
+
+            ForEach(upcomingBills.prefix(5)) { item in
+                HStack(spacing: 12) {
+                    Image(systemName: item.isSubscription ? "arrow.triangle.2.circlepath" : "calendar")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .frame(width: 28, height: 28)
+                        .background(
+                            item.nextDate <= Date() ? Color.red
+                            : item.nextDate <= Calendar.current.date(byAdding: .day, value: 3, to: Date())! ? Color.orange
+                            : AppTheme.accent(for: scheme),
+                            in: RoundedRectangle(cornerRadius: 7)
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.title)
+                            .font(.subheadline.weight(.medium))
+                        Group {
+                            if item.nextDate <= Date() {
+                                Text("Overdue")
+                            } else {
+                                Text(item.nextDate, style: .date)
+                            }
+                        }
+                        .font(.caption)
+                        .foregroundStyle(item.nextDate <= Date() ? .red : .secondary)
+                    }
+
+                    Spacer()
+
+                    Text(CurrencyFormatter.shared.format(abs(item.amount)))
+                        .font(.subheadline.monospacedDigit())
+                        .foregroundStyle(.primary)
+                }
+            }
+
+            if upcomingBills.count > 5 {
+                Text("+\(upcomingBills.count - 5) more")
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.accent(for: scheme))
+            }
+        }
+        .premiumCard()
     }
 
     private var subscriptionsCard: some View {
