@@ -6,7 +6,7 @@ APP_NAME="Mint Leaf"
 SCHEME="MintLeaf_macOS"
 PROJECT="MintLeaf.xcodeproj"
 BUILD_DIR="build"
-DMG_NAME="MintLeaf-v2.1.1"
+DMG_NAME="MintLeaf-v2.1.2"
 VOLUME_NAME="Mint Leaf"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
