@@ -3,21 +3,19 @@ import Foundation
 struct CurrencyFormatter {
     static let shared = CurrencyFormatter()
 
-    private let formatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.locale = Locale.current
-        return f
-    }()
+    private static var defaultCurrency: String {
+        UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
+    }
 
-    func format(_ amount: Decimal, currency: String = "USD") -> String {
+    func format(_ amount: Decimal, currency: String? = nil) -> String {
+        let code = currency ?? Self.defaultCurrency
         let f = NumberFormatter()
         f.numberStyle = .currency
-        f.currencyCode = currency
+        f.currencyCode = code
         return f.string(from: amount as NSDecimalNumber) ?? "$0.00"
     }
 
-    func formatSigned(_ amount: Decimal, currency: String = "USD") -> String {
+    func formatSigned(_ amount: Decimal, currency: String? = nil) -> String {
         let formatted = format(abs(amount), currency: currency)
         return amount < 0 ? "-\(formatted)" : "+\(formatted)"
     }

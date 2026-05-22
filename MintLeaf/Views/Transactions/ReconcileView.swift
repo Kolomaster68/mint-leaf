@@ -97,6 +97,7 @@ struct ReconcileView: View {
                 }
             }
         }
+        .formStyle(.grouped)
         .macOSSheet(width: 600, height: 550)
     }
 }

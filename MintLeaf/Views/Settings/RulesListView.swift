@@ -356,7 +356,8 @@ struct NewRuleSheet: View {
                 }
             }
         }
-        .macOSSheet(width: 480, height: 380)
+        .formStyle(.grouped)
+        .macOSSheet(width: 480, height: 420)
     }
 }
 
@@ -414,6 +415,7 @@ struct NewAliasSheet: View {
                 }
             }
         }
-        .macOSSheet(width: 480, height: 280)
+        .formStyle(.grouped)
+        .macOSSheet(width: 480, height: 320)
     }
 }

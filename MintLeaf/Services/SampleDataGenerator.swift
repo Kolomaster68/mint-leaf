@@ -6,6 +6,9 @@ struct SampleDataGenerator {
         let existingAccounts = (try? context.fetch(FetchDescriptor<Account>())) ?? []
         if !existingAccounts.isEmpty { return }
 
+        // Reset currency to match sample data
+        UserDefaults.standard.set("USD", forKey: "defaultCurrency")
+
         var categories = fetchCategories(context: context)
         if categories.isEmpty {
             DefaultCategories.seed(context: context)

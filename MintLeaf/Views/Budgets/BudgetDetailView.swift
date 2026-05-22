@@ -190,6 +190,7 @@ struct AddBudgetItemSheet: View {
                 }
             }
         }
-        .macOSSheet(width: 500, height: 300)
+        .formStyle(.grouped)
+        .macOSSheet(width: 500, height: 340)
     }
 }

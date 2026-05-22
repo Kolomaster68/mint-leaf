@@ -39,7 +39,7 @@ final class RecurringDetector {
 
         var patterns: [RecurringPattern] = []
 
-        for (merchant, txns) in grouped {
+        for (_, txns) in grouped {
             guard txns.count >= 3 else { continue }
             let sorted = txns.sorted { $0.date < $1.date }
             let intervals = zip(sorted, sorted.dropFirst()).map {

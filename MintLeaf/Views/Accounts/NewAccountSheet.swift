@@ -10,7 +10,7 @@ struct NewAccountSheet: View {
 
     @State private var name = ""
     @State private var type: AccountType = .checking
-    @State private var currency = "USD"
+    @State private var currency = UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
     @State private var initialBalance = ""
     @State private var colorHex = "#4CAF50"
     @State private var customColor = Color(hex: "#4CAF50")
@@ -34,7 +34,11 @@ struct NewAccountSheet: View {
                             Label(type.rawValue, systemImage: type.icon).tag(type)
                         }
                     }
-                    TextField("Currency", text: $currency)
+                    Picker("Currency", selection: $currency) {
+                        ForEach(SupportedCurrencies.all, id: \.code) { c in
+                            Text("\(c.flag) \(c.code)").tag(c.code)
+                        }
+                    }
                     if !isEditing {
                         TextField("Balance", text: $initialBalance)
                             #if os(iOS)
@@ -126,6 +130,7 @@ struct NewAccountSheet: View {
                 }
             }
         }
+        .formStyle(.grouped)
         .macOSSheet(width: 520, height: 560)
     }
 

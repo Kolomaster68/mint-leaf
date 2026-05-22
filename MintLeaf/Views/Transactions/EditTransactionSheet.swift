@@ -90,6 +90,7 @@ struct EditTransactionSheet: View {
             }
             .onAppear(perform: loadTransaction)
         }
+        .formStyle(.grouped)
         .macOSSheet(width: 580, height: 520)
     }
 
