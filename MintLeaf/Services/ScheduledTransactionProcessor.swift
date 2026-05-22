@@ -16,8 +16,13 @@ enum ScheduledTransactionProcessor {
         guard let overdue = try? context.fetch(descriptor) else { return }
 
         for scheduled in overdue {
-            // Process all missed occurrences (in case app wasn't opened for a while)
-            while scheduled.nextDate <= now && scheduled.isActive {
+            // Safety: cap iterations to prevent infinite loops from bad data
+            var iterations = 0
+            let maxIterations = 1000
+
+            while scheduled.nextDate <= now && scheduled.isActive && iterations < maxIterations {
+                iterations += 1
+
                 // Check end date
                 if let endDate = scheduled.endDate, scheduled.nextDate > endDate {
                     scheduled.isActive = false
@@ -39,7 +44,21 @@ enum ScheduledTransactionProcessor {
                 }
 
                 // Advance to next occurrence
-                scheduled.nextDate = nextOccurrence(after: scheduled.nextDate, frequency: scheduled.frequency)
+                let previous = scheduled.nextDate
+                let next = nextOccurrence(after: previous, frequency: scheduled.frequency)
+
+                // If date didn't actually advance, break to prevent infinite loop
+                if next <= previous {
+                    scheduled.nextDate = now
+                    break
+                }
+
+                scheduled.nextDate = next
+            }
+
+            // If we hit the cap, just jump to now so it doesn't loop again next launch
+            if iterations >= maxIterations {
+                scheduled.nextDate = now
             }
         }
 
@@ -50,17 +69,17 @@ enum ScheduledTransactionProcessor {
         let calendar = Calendar.current
         switch frequency {
         case .daily:
-            return calendar.date(byAdding: .day, value: 1, to: date) ?? date
+            return calendar.date(byAdding: .day, value: 1, to: date) ?? date.addingTimeInterval(86400)
         case .weekly:
-            return calendar.date(byAdding: .weekOfYear, value: 1, to: date) ?? date
+            return calendar.date(byAdding: .weekOfYear, value: 1, to: date) ?? date.addingTimeInterval(604800)
         case .biweekly:
-            return calendar.date(byAdding: .weekOfYear, value: 2, to: date) ?? date
+            return calendar.date(byAdding: .weekOfYear, value: 2, to: date) ?? date.addingTimeInterval(1209600)
         case .monthly:
-            return calendar.date(byAdding: .month, value: 1, to: date) ?? date
+            return calendar.date(byAdding: .month, value: 1, to: date) ?? date.addingTimeInterval(2592000)
         case .quarterly:
-            return calendar.date(byAdding: .month, value: 3, to: date) ?? date
+            return calendar.date(byAdding: .month, value: 3, to: date) ?? date.addingTimeInterval(7776000)
         case .yearly:
-            return calendar.date(byAdding: .year, value: 1, to: date) ?? date
+            return calendar.date(byAdding: .year, value: 1, to: date) ?? date.addingTimeInterval(31536000)
         }
     }
 }
