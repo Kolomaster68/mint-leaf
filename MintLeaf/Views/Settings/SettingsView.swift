@@ -489,23 +489,23 @@ struct SettingsView: View {
         }
 
         Section("About") {
-            HStack(spacing: 16) {
+            VStack(spacing: 8) {
                 Image(systemName: "leaf.fill")
                     .font(.system(size: 36))
                     .foregroundStyle(AppTheme.accentGradient(for: scheme))
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Mint Leaf")
-                        .font(.title3.weight(.semibold))
-                    Text("Version 2.0.0")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("Personal finance, beautifully simple.")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
-                }
-                Spacer()
+                Text("Mint Leaf")
+                    .font(.title3.weight(.semibold))
+                Text("Version \(UpdateChecker.shared.currentVersionDisplay)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text("Personal finance, beautifully simple.")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             }
+            .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
+
+            updateCheckerView
 
             HStack {
                 Link(destination: URL(string: "https://github.com/Kolomaster68/mint-leaf")!) {
@@ -516,6 +516,7 @@ struct SettingsView: View {
             }
 
             HStack(spacing: 4) {
+                Spacer()
                 Text("Built with")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
@@ -525,6 +526,7 @@ struct SettingsView: View {
                 Text("by Joe Farmer")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
+                Spacer()
             }
         }
 
@@ -542,6 +544,89 @@ struct SettingsView: View {
             }
         }
         #endif
+    }
+
+    private var updateCheckerView: some View {
+        let checker = UpdateChecker.shared
+        return Group {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    if checker.updateAvailable {
+                        HStack(spacing: 6) {
+                            Image(systemName: "arrow.down.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Update Available: v\(checker.latestVersion)")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        if let asset = checker.dmgAsset {
+                            Text("\(asset.name) (\(ByteCountFormatter.string(fromByteCount: Int64(asset.size), countStyle: .file)))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if checker.isChecking {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .controlSize(.small)
+                            Text("Checking for updates...")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if let error = checker.error {
+                        HStack(spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .foregroundStyle(.orange)
+                            Text(error)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if checker.lastChecked != nil && !checker.updateAvailable {
+                        HStack(spacing: 6) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("You're up to date (v\(checker.currentVersionDisplay))")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        Text("Current version: v\(checker.currentVersionDisplay)")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+            }
+
+            if checker.updateAvailable, let asset = checker.dmgAsset,
+               let url = URL(string: asset.browserDownloadUrl) {
+                Link(destination: url) {
+                    Label("Download Update", systemImage: "arrow.down.to.line")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(AppTheme.accent(for: scheme))
+                }
+
+                if let releaseURL = URL(string: checker.latestRelease?.htmlUrl ?? "") {
+                    Link(destination: releaseURL) {
+                        Label("View Release Notes", systemImage: "doc.text")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            Button {
+                Task { await checker.checkForUpdates() }
+            } label: {
+                Label("Check for Updates", systemImage: "arrow.clockwise")
+                    .font(.subheadline)
+            }
+            .disabled(checker.isChecking)
+
+            if let lastChecked = checker.lastChecked {
+                Text("Last checked: \(lastChecked.formatted(.relative(presentation: .named)))")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+            }
+        }
     }
 
     private func columnHeader(_ title: String, key: CategorySortKey, alignment: Alignment) -> some View {

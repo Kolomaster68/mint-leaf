@@ -39,8 +39,11 @@ struct NewAccountSheet: View {
                             Text("\(c.flag) \(c.code)").tag(c.code)
                         }
                     }
-                    if !isEditing {
-                        TextField("Balance", text: $initialBalance)
+                    HStack {
+                        Text(isEditing ? "Starting Balance" : "Balance")
+                        Spacer()
+                        TextField("", text: $initialBalance, prompt: Text("0.00").foregroundStyle(.tertiary))
+                            .multilineTextAlignment(.trailing)
                             #if os(iOS)
                             .keyboardType(.decimalPad)
                             #endif
@@ -124,6 +127,7 @@ struct NewAccountSheet: View {
                     name = account.name
                     type = account.type
                     currency = account.currency
+                    initialBalance = "\(account.initialBalance)"
                     colorHex = account.colorHex
                     customColor = Color(hex: account.colorHex)
                     useCustomColor = !presetColors.contains(account.colorHex)
@@ -139,6 +143,7 @@ struct NewAccountSheet: View {
             account.name = name
             account.type = type
             account.currency = currency
+            account.initialBalance = Decimal(string: initialBalance) ?? account.initialBalance
             account.colorHex = colorHex
             account.icon = type.icon
         } else {
