@@ -319,10 +319,22 @@ struct TrendsView: View {
         let sorted = allTransactions.sorted { $0.date < $1.date }
         let initial = accounts.reduce(Decimal.zero) { $0 + $1.initialBalance }
         var running = initial
-        return sorted.map { txn in
+
+        // Aggregate by day so each date has exactly one point (the end-of-day balance).
+        // This prevents loops caused by multiple transactions on the same date.
+        let calendar = Calendar.current
+        var dayBalances: [(date: Date, balance: Double)] = []
+        for txn in sorted {
             running += txn.amount
-            return BalancePoint(id: txn.date, balance: Double(truncating: running as NSDecimalNumber))
+            let day = calendar.startOfDay(for: txn.date)
+            let bal = Double(truncating: running as NSDecimalNumber)
+            if let last = dayBalances.last, calendar.isDate(last.date, inSameDayAs: day) {
+                dayBalances[dayBalances.count - 1] = (day, bal)
+            } else {
+                dayBalances.append((day, bal))
+            }
         }
+        return dayBalances.map { BalancePoint(id: $0.date, balance: $0.balance) }
     }
 
     private var balanceChart: some View {
@@ -360,20 +372,21 @@ struct TrendsView: View {
                 )
                 .foregroundStyle(AppTheme.accent(for: scheme))
                 .lineStyle(StrokeStyle(lineWidth: 2))
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(.monotone)
 
                 AreaMark(
                     x: .value("Date", point.id),
-                    y: .value("Balance", point.balance)
+                    yStart: .value("Baseline", 0),
+                    yEnd: .value("Balance", point.balance)
                 )
                 .foregroundStyle(
                     LinearGradient(
-                        colors: [AppTheme.accent(for: scheme).opacity(0.3), AppTheme.accent(for: scheme).opacity(0.0)],
+                        colors: [AppTheme.accent(for: scheme).opacity(0.25), AppTheme.accent(for: scheme).opacity(0.02)],
                         startPoint: .top,
                         endPoint: .bottom
                     )
                 )
-                .interpolationMethod(.catmullRom)
+                .interpolationMethod(.monotone)
             }
             .chartYAxis {
                 AxisMarks(position: .trailing) { value in
