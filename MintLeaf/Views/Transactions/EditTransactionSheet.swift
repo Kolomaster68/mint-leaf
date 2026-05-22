@@ -140,6 +140,7 @@ struct EditTransactionSheet: View {
                     category: selectedCategory,
                     account: dest
                 )
+                mirror.transferDestination = account  // Link back so both sides are flagged as transfers
                 context.insert(mirror)
             }
         }

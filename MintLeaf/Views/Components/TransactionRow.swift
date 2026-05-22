@@ -51,7 +51,7 @@ struct TransactionRow: View {
 
             Text(CurrencyFormatter.shared.format(transaction.amount, currency: transaction.account?.currency ?? "USD"))
                 .font(.body.monospacedDigit())
-                .foregroundStyle(transaction.isExpense ? .red : .green)
+                .foregroundStyle(transaction.amount < 0 ? .red : .green)
         }
         .padding(.vertical, 2)
     }

@@ -73,7 +73,7 @@ struct ReconcileView: View {
 
                                 Text(CurrencyFormatter.shared.format(transaction.amount))
                                     .monospacedDigit()
-                                    .foregroundStyle(transaction.isExpense ? .red : .green)
+                                    .foregroundStyle(transaction.amount < 0 ? .red : .green)
                             }
                         }
                     }

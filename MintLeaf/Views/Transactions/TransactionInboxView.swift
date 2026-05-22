@@ -198,7 +198,7 @@ struct InboxTransactionRow: View {
     }
 
     private var relevantCategories: [Category] {
-        categories.filter { $0.isIncome == transaction.isIncome }
+        categories.filter { $0.isIncome == (transaction.amount > 0) }
     }
 
     var body: some View {
@@ -252,7 +252,7 @@ struct InboxTransactionRow: View {
 
             Text(CurrencyFormatter.shared.format(transaction.amount, currency: transaction.account?.currency ?? "USD"))
                 .font(.body.monospacedDigit())
-                .foregroundStyle(transaction.isExpense ? .red : .green)
+                .foregroundStyle(transaction.amount < 0 ? .red : .green)
 
             categoryPicker
         }
