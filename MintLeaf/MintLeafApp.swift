@@ -9,6 +9,8 @@ struct MintLeafApp: App {
     @AppStorage("highContrastMode") private var highContrastMode = false
     @AppStorage("reduceMotion") private var reduceMotion = false
 
+    static let isDevMode = ProcessInfo.processInfo.arguments.contains("-useSampleData")
+
     init() {
         let schema = Schema([
             Account.self,
@@ -22,8 +24,9 @@ struct MintLeafApp: App {
             Goal.self,
             Tag.self,
         ])
+        let storeName = Self.isDevMode ? "MintLeaf-dev" : "MintLeaf"
         let config = ModelConfiguration(
-            "MintLeaf",
+            storeName,
             schema: schema,
             cloudKitDatabase: .none
         )
@@ -75,6 +78,17 @@ struct MintLeafApp: App {
                 }
                 #if os(macOS)
                 .onAppear { restoreAppIcon() }
+                .overlay(alignment: .topTrailing) {
+                    if Self.isDevMode {
+                        Text("DEV")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(.red, in: Capsule())
+                            .padding(8)
+                    }
+                }
                 #endif
         }
         .modelContainer(container)
