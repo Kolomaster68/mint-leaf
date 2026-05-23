@@ -22,6 +22,9 @@ final class Transaction {
     @Relationship(inverse: \ScheduledTransaction.generatedTransactions)
     var scheduledSource: ScheduledTransaction?
 
+    @Relationship(inverse: \Tag.transactions)
+    var tags: [Tag]
+
     var isExpense: Bool { amount < 0 && !isTransfer }
     var isIncome: Bool { amount > 0 && !isTransfer }
     var isTransfer: Bool { transferDestination != nil }
@@ -44,5 +47,6 @@ final class Transaction {
         self.isReconciled = false
         self.category = category
         self.account = account
+        self.tags = []
     }
 }

@@ -7,7 +7,6 @@ struct TrendsView: View {
     @Query(sort: \Account.sortOrder) private var accounts: [Account]
     @State private var timeRange: TimeRange = .sixMonths
     @State private var chartType: ChartType = .spending
-    @State private var selectedCategory: String?
 
     enum TimeRange: String, CaseIterable, Identifiable {
         case oneMonth = "1M"
@@ -33,7 +32,6 @@ struct TrendsView: View {
         case spending = "Spending"
         case incomeVsExpense = "Income vs Expense"
         case balance = "Balance"
-        case categories = "By Category"
 
         var id: String { rawValue }
     }
@@ -74,8 +72,6 @@ struct TrendsView: View {
                     incomeVsExpenseChart
                 case .balance:
                     balanceChart
-                case .categories:
-                    categoryBreakdown
                 }
             }
             .padding()
@@ -402,226 +398,6 @@ struct TrendsView: View {
                 }
             }
             .frame(height: 260)
-        }
-        .padding()
-        .background(AppTheme.cardBackground(for: scheme), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AppTheme.accent(for: scheme).opacity(0.12), lineWidth: 1))
-        .padding(.horizontal)
-    }
-
-    private struct CategoryData: Identifiable {
-        let id: String
-        let name: String
-        let total: Decimal
-        let pct: Double
-        let txnCount: Int
-        let merchants: [MerchantData]
-    }
-
-    private struct MerchantData: Identifiable {
-        let id: String
-        let name: String
-        let total: Decimal
-        let pct: Double
-        let txnCount: Int
-    }
-
-    private var categoryData: [CategoryData] {
-        let expenses = allTransactions.filter { $0.isExpense }
-        let grouped = Dictionary(grouping: expenses) { $0.category?.name ?? "Uncategorized" }
-        let totalExp = expenses.reduce(Decimal.zero) { $0 + abs($1.amount) }
-        return grouped.map { key, txns in
-            let total = txns.reduce(Decimal.zero) { $0 + abs($1.amount) }
-            let pct = totalExp > 0 ? Double(truncating: (total / totalExp * 100) as NSDecimalNumber) : 0
-            let merchantGrouped = Dictionary(grouping: txns) { $0.title }
-            let merchants = merchantGrouped.map { mName, mTxns in
-                let mTotal = mTxns.reduce(Decimal.zero) { $0 + abs($1.amount) }
-                let mPct = total > 0 ? Double(truncating: (mTotal / total * 100) as NSDecimalNumber) : 0
-                return MerchantData(id: mName, name: mName, total: mTotal, pct: mPct, txnCount: mTxns.count)
-            }.sorted { $0.total > $1.total }
-            return CategoryData(id: key, name: key, total: total, pct: pct, txnCount: txns.count, merchants: merchants)
-        }
-        .sorted { $0.total > $1.total }
-    }
-
-    private struct MerchantSlice: Identifiable {
-        let id: String
-        let name: String
-        let amount: Double
-        let category: String
-    }
-
-    private var categoryBreakdown: some View {
-        let data = categoryData
-        let totalExp = data.reduce(Decimal.zero) { $0 + $1.total }
-        let selectedItem = selectedCategory.flatMap { sel in data.first { $0.name == sel } }
-
-        let merchantSlices: [MerchantSlice] = selectedItem.map { item in
-            item.merchants.map { m in
-                MerchantSlice(id: m.id, name: m.name, amount: Double(truncating: m.total as NSDecimalNumber), category: item.name)
-            }
-        } ?? []
-
-        return VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Spending by Category")
-                    .font(.headline)
-                Spacer()
-                if selectedCategory != nil {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.25)) { selectedCategory = nil }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                                .font(.caption2)
-                            Text("All Categories")
-                                .font(.caption)
-                        }
-                        .foregroundStyle(AppTheme.accent(for: scheme))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.bottom, 20)
-
-            ZStack {
-                if let selected = selectedItem {
-                    Chart(merchantSlices) { slice in
-                        SectorMark(
-                            angle: .value("Amount", slice.amount),
-                            innerRadius: .ratio(0.6),
-                            outerRadius: .ratio(0.92),
-                            angularInset: 1.0
-                        )
-                        .foregroundStyle(by: .value("Merchant", slice.name))
-                        .cornerRadius(3)
-                    }
-                    .chartLegend(.hidden)
-                    .frame(height: 280)
-
-                    VStack(spacing: 6) {
-                        Text(selected.name)
-                            .font(.subheadline.bold())
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                        Text(CurrencyFormatter.shared.format(selected.total))
-                            .font(.title2.bold().monospacedDigit())
-                            .foregroundStyle(AppTheme.accent(for: scheme))
-                        Text(String(format: "%.1f%% of total", selected.pct))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                        Text("\(selected.txnCount) transactions")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(width: 140)
-                } else {
-                    Chart(data) { item in
-                        SectorMark(
-                            angle: .value("Amount", Double(truncating: item.total as NSDecimalNumber)),
-                            innerRadius: .ratio(0.6),
-                            outerRadius: .ratio(0.92),
-                            angularInset: 1.5
-                        )
-                        .foregroundStyle(by: .value("Category", item.name))
-                        .cornerRadius(4)
-                    }
-                    .chartLegend(.hidden)
-                    .frame(height: 280)
-
-                    VStack(spacing: 6) {
-                        Text("Total Spending")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(CurrencyFormatter.shared.format(totalExp))
-                            .font(.title2.bold().monospacedDigit())
-                            .foregroundStyle(.primary)
-                        Text("\(data.count) categories")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                    }
-                    .frame(width: 140)
-                }
-            }
-
-            Divider()
-                .padding(.top, 20)
-                .padding(.bottom, 16)
-
-            if let selected = selectedItem {
-                ForEach(selected.merchants) { merchant in
-                    HStack(spacing: 10) {
-                        Circle()
-                            .fill(AppTheme.accent(for: scheme).opacity(0.6))
-                            .frame(width: 6, height: 6)
-
-                        Text(merchant.name)
-                            .font(.subheadline)
-                            .lineLimit(1)
-                        Spacer()
-
-                        GeometryReader { geo in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(AppTheme.accent(for: scheme).opacity(0.3))
-                                .frame(width: geo.size.width * min(merchant.pct / 100.0, 1.0))
-                        }
-                        .frame(width: 80, height: 6)
-
-                        Text(String(format: "%.0f%%", merchant.pct))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 35, alignment: .trailing)
-
-                        Text(CurrencyFormatter.shared.format(merchant.total))
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 100, alignment: .trailing)
-                    }
-                    .padding(.vertical, 3)
-                }
-            } else {
-                ForEach(data.prefix(12)) { item in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            selectedCategory = item.name
-                        }
-                    } label: {
-                        HStack(spacing: 10) {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(AppTheme.accent(for: scheme))
-                                .frame(width: 4, height: 22)
-
-                            Text(item.name)
-                                .font(.subheadline)
-                            Spacer()
-
-                            GeometryReader { geo in
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(AppTheme.accent(for: scheme).opacity(0.25))
-                                    .frame(width: geo.size.width * min(item.pct / 100.0, 1.0))
-                            }
-                            .frame(width: 80, height: 6)
-
-                            Text(String(format: "%.0f%%", item.pct))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 35, alignment: .trailing)
-
-                            Text(CurrencyFormatter.shared.format(item.total))
-                                .font(.subheadline.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 100, alignment: .trailing)
-
-                            Image(systemName: "chevron.right")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(.vertical, 4)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
         }
         .padding()
         .background(AppTheme.cardBackground(for: scheme), in: RoundedRectangle(cornerRadius: 12))

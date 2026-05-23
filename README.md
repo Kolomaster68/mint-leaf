@@ -36,7 +36,7 @@
 ---
 
 <p align="center">
-  <img src="screenshots/dashboard-light.png" width="800" alt="Mint Leaf Dashboard">
+  <img src="screenshots/tutorial-overview-dark.png" width="800" alt="Mint Leaf Dashboard">
 </p>
 
 ## What's New in v3.0
@@ -97,29 +97,37 @@ v3.0 is the biggest update to Mint Leaf yet, adding five major features and a su
 
 ## Screenshots
 
-### Light Mode
-
-<table>
-  <tr>
-    <td align="center"><img src="screenshots/dashboard-light.png" width="400" alt="Overview Dashboard"><br><strong>Overview Dashboard</strong></td>
-    <td align="center"><img src="screenshots/tutorial-search-light.png" width="400" alt="Search"><br><strong>Search</strong></td>
-  </tr>
-  <tr>
-    <td align="center"><img src="screenshots/inbox-light.png" width="400" alt="Transaction Inbox"><br><strong>Transaction Inbox</strong></td>
-    <td align="center"><img src="screenshots/budgets-light.png" width="400" alt="Budgets"><br><strong>Budgets</strong></td>
-  </tr>
-</table>
-
 ### Dark Mode
 
 <table>
   <tr>
-    <td align="center"><img src="screenshots/trends-dark.png" width="400" alt="Trends"><br><strong>Trends & Analytics</strong></td>
-    <td align="center"><img src="screenshots/insights-dark.png" width="400" alt="Insights"><br><strong>Smart Insights</strong></td>
+    <td align="center"><img src="screenshots/tutorial-overview-dark.png" width="400" alt="Overview Dashboard"><br><strong>Overview Dashboard</strong></td>
+    <td align="center"><img src="screenshots/tutorial-search-dark.png" width="400" alt="Search"><br><strong>Search</strong></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/scheduled-dark.png" width="400" alt="Scheduled"><br><strong>Scheduled Transactions</strong></td>
-    <td align="center"><img src="screenshots/rules-dark.png" width="400" alt="Rules"><br><strong>Rules & Automation</strong></td>
+    <td align="center"><img src="screenshots/tutorial-trends-dark.png" width="400" alt="Trends"><br><strong>Trends & Analytics</strong></td>
+    <td align="center"><img src="screenshots/tutorial-insights-dark.png" width="400" alt="Insights"><br><strong>Smart Insights</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/tutorial-networth-dark.png" width="400" alt="Net Worth"><br><strong>Net Worth</strong></td>
+    <td align="center"><img src="screenshots/tutorial-inbox-dark.png" width="400" alt="Transaction Inbox"><br><strong>Transaction Inbox</strong></td>
+  </tr>
+</table>
+
+### Light Mode
+
+<table>
+  <tr>
+    <td align="center"><img src="screenshots/tutorial-reports-light.png" width="400" alt="Reports"><br><strong>Reports</strong></td>
+    <td align="center"><img src="screenshots/tutorial-scheduled-light.png" width="400" alt="Scheduled"><br><strong>Scheduled Transactions</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/tutorial-forecast-light.png" width="400" alt="Forecast"><br><strong>Forecast</strong></td>
+    <td align="center"><img src="screenshots/tutorial-budgets-light.png" width="400" alt="Budgets"><br><strong>Budgets</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="screenshots/tutorial-rules-light.png" width="400" alt="Rules"><br><strong>Rules & Automation</strong></td>
+    <td align="center"><img src="screenshots/tutorial-goals-light.png" width="400" alt="Goals"><br><strong>Goals & Wishlist</strong></td>
   </tr>
 </table>
 
@@ -154,12 +162,12 @@ New users are guided through a polished onboarding flow with three options:
     <td align="center"><img src="screenshots/onboarding-features.png" width="400" alt="Features"><br><strong>Features Overview</strong></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/onboarding-setup-dark.png" width="400" alt="Setup Dark"><br><strong>Setup (Dark)</strong></td>
-    <td align="center"><img src="screenshots/onboarding-setup-light.png" width="400" alt="Setup Light"><br><strong>Setup (Light)</strong></td>
+    <td align="center"><img src="screenshots/onboarding-setup.png" width="400" alt="Setup"><br><strong>Setup</strong></td>
+    <td align="center"><img src="screenshots/tutorial-welcome-dark.png" width="400" alt="Tour Start"><br><strong>Guided Tour</strong></td>
   </tr>
   <tr>
-    <td align="center"><img src="screenshots/tutorial-complete-dark.png" width="400" alt="Tour Complete"><br><strong>Tour Complete</strong></td>
-    <td align="center"><img src="screenshots/tutorial-imports-dark.png" width="400" alt="Tour Step"><br><strong>Guided Tour</strong></td>
+    <td align="center"><img src="screenshots/tutorial-imports-light.png" width="400" alt="Tour Step"><br><strong>Tour Step</strong></td>
+    <td align="center"><img src="screenshots/tutorial-complete-light.png" width="400" alt="Tour Complete"><br><strong>Tour Complete</strong></td>
   </tr>
 </table>
 
@@ -243,8 +251,6 @@ These features are actively being explored for upcoming releases:
 | Feature | Notes |
 |---------|-------|
 | Receipt Scanning | Attach photos or scan receipts to extract amounts |
-| Onboarding v3 | Updated tutorial covering Net Worth, Reports, Goals, Forecast, and Tags |
-| Fresh Screenshots | New screenshots showcasing all v3 features |
 | Widgets | At-a-glance spending and balance widgets (requires Apple Developer account) |
 | Apple Watch | Quick balance checks from your wrist (requires Apple Developer account) |
 | Bank Integration | Connect accounts via Plaid or Open Banking |

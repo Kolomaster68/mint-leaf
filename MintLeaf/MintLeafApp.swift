@@ -19,6 +19,8 @@ struct MintLeafApp: App {
             ScheduledTransaction.self,
             CategoryRule.self,
             MerchantAlias.self,
+            Goal.self,
+            Tag.self,
         ])
         let config = ModelConfiguration(
             "MintLeaf",
