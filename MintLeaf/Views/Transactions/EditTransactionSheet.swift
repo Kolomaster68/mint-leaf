@@ -6,6 +6,7 @@ struct EditTransactionSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query(sort: \Account.sortOrder) private var accounts: [Account]
+    @Query(sort: \Tag.sortOrder) private var allTags: [Tag]
 
     let account: Account
     var transaction: Transaction?
@@ -18,6 +19,7 @@ struct EditTransactionSheet: View {
     @State private var selectedCategory: Category?
     @State private var isTransfer = false
     @State private var transferAccount: Account?
+    @State private var selectedTags: Set<UUID> = []
 
     private var isEditing: Bool { transaction != nil }
 
@@ -64,6 +66,46 @@ struct EditTransactionSheet: View {
                         .lineLimit(2...4)
                 }
 
+                if !allTags.isEmpty {
+                    Section("Tags") {
+                        FlowLayout(spacing: 8) {
+                            ForEach(allTags) { tag in
+                                let isSelected = selectedTags.contains(tag.id)
+                                Button {
+                                    if isSelected {
+                                        selectedTags.remove(tag.id)
+                                    } else {
+                                        selectedTags.insert(tag.id)
+                                    }
+                                } label: {
+                                    HStack(spacing: 5) {
+                                        Image(systemName: "tag.fill")
+                                            .font(.caption2)
+                                        Text(tag.name)
+                                            .font(.caption)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(
+                                        isSelected
+                                            ? Color(hex: tag.colorHex).opacity(0.2)
+                                            : Color.secondary.opacity(0.1),
+                                        in: Capsule()
+                                    )
+                                    .overlay(
+                                        Capsule().strokeBorder(
+                                            isSelected ? Color(hex: tag.colorHex) : Color.clear,
+                                            lineWidth: 1.5
+                                        )
+                                    )
+                                    .foregroundStyle(isSelected ? Color(hex: tag.colorHex) : .secondary)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                }
+
                 if isEditing {
                     Section {
                         Button("Delete Transaction", role: .destructive) {
@@ -102,6 +144,7 @@ struct EditTransactionSheet: View {
         date = t.date
         notes = t.notes
         selectedCategory = t.category
+        selectedTags = Set(t.tags.map(\.id))
         if let dest = t.transferDestination {
             isTransfer = true
             transferAccount = dest
@@ -112,6 +155,8 @@ struct EditTransactionSheet: View {
         guard let value = Decimal(string: amount) else { return }
         let signedAmount = isExpense ? -abs(value) : abs(value)
 
+        let tagsToApply = allTags.filter { selectedTags.contains($0.id) }
+
         if let t = transaction {
             t.title = title
             t.amount = signedAmount
@@ -119,6 +164,7 @@ struct EditTransactionSheet: View {
             t.notes = notes
             t.category = selectedCategory
             t.transferDestination = isTransfer ? transferAccount : nil
+            t.tags = tagsToApply
         } else {
             let t = Transaction(
                 amount: signedAmount,
@@ -129,6 +175,7 @@ struct EditTransactionSheet: View {
                 account: account
             )
             t.transferDestination = isTransfer ? transferAccount : nil
+            t.tags = tagsToApply
             context.insert(t)
 
             if isTransfer, let dest = transferAccount {
@@ -140,7 +187,7 @@ struct EditTransactionSheet: View {
                     category: selectedCategory,
                     account: dest
                 )
-                mirror.transferDestination = account  // Link back so both sides are flagged as transfers
+                mirror.transferDestination = account
                 context.insert(mirror)
             }
         }

@@ -163,6 +163,7 @@ struct ContentView: View {
     }
 
     private var sidebar: some View {
+        ScrollViewReader { proxy in
         List {
             HStack {
                 sidebarRow("Overview", icon: "square.grid.2x2", destination: .overview)
@@ -399,6 +400,10 @@ struct ContentView: View {
         }
         .background(AppTheme.sidebarBackground(for: scheme))
         .toolbar {}
+        .onChange(of: tutorial.currentStepIndex) { _, _ in
+            scrollToTutorialStep(proxy: proxy)
+        }
+        }
         .sheet(isPresented: $showingNotifications) {
             NotificationCenterView()
         }
@@ -427,8 +432,30 @@ struct ContentView: View {
         }
     }
 
+    private func isTutorialHighlighted(_ destination: SidebarDestination) -> Bool {
+        guard tutorial.isActive, let nav = tutorial.currentStep?.navigation else { return false }
+        let tutorialDest: SidebarDestination? = switch nav {
+        case "overview": .overview
+        case "search": .search
+        case "inbox": .inbox
+        case "budgets": .budgets
+        case "trends": .trends
+        case "insights": .insights
+        case "networth": .netWorth
+        case "reports": .reports
+        case "goals": .goals
+        case "forecast": .forecast
+        case "tags": .tags
+        case "scheduled": .scheduled
+        case "rules": .rules
+        default: nil
+        }
+        return tutorialDest == destination
+    }
+
     private func sidebarRow(_ title: String, icon: String, destination: SidebarDestination) -> some View {
         let isSelected = selection == destination
+        let isTutorial = isTutorialHighlighted(destination)
         return Button {
             selection = destination
         } label: {
@@ -445,15 +472,23 @@ struct ContentView: View {
             .contentShape(Rectangle())
             .background(
                 RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? AppTheme.accent(for: scheme).opacity(0.12) : .clear)
+                    .fill(isSelected ? AppTheme.accent(for: scheme).opacity(isTutorial ? 0.25 : 0.12) : .clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(isSelected ? AppTheme.accent(for: scheme).opacity(0.4) : .clear, lineWidth: 1)
+                    .strokeBorder(
+                        isTutorial ? AppTheme.accent(for: scheme)
+                        : isSelected ? AppTheme.accent(for: scheme).opacity(0.4)
+                        : .clear,
+                        lineWidth: isTutorial ? 2.5 : 1
+                    )
             )
+            .shadow(color: isTutorial ? AppTheme.accent(for: scheme).opacity(0.4) : .clear, radius: 6, x: 0, y: 0)
         }
         .buttonStyle(.plain)
         .foregroundStyle(isSelected ? AppTheme.accent(for: scheme) : .primary)
+        .id(destination)
+        .animation(.easeInOut(duration: 0.3), value: isTutorial)
     }
 
     private func sidebarAccountRow(_ account: Account) -> some View {
@@ -533,9 +568,9 @@ struct ContentView: View {
         case .insights:
             InsightsView()
         case .netWorth:
-            ComingSoonView(title: "Net Worth", icon: "banknote", description: "Track your total net worth across all accounts over time.")
+            NetWorthView()
         case .reports:
-            ComingSoonView(title: "Reports", icon: "doc.text.magnifyingglass", description: "Generate monthly and yearly spending summaries you can export.")
+            ReportsView()
         case .scheduled:
             ScheduledListView()
         case .subscriptions:
@@ -543,15 +578,15 @@ struct ContentView: View {
         case .bills:
             ScheduledListView(filterMode: .bills)
         case .goals:
-            ComingSoonView(title: "Goals", icon: "target", description: "Set savings goals and track your progress towards them.")
+            GoalsView()
         case .forecast:
-            ComingSoonView(title: "Forecast", icon: "chart.line.flattrend.xyaxis", description: "See projected balances based on your scheduled transactions.")
+            ForecastView()
         case .budgets:
             BudgetListView()
         case .rules:
             RulesListView()
         case .tags:
-            ComingSoonView(title: "Tags", icon: "tag", description: "Create custom tags to organise transactions across categories.")
+            TagsView()
         case .importExport:
             ImportExportView()
         }
@@ -562,22 +597,83 @@ struct ContentView: View {
         if categories.isEmpty {
             DefaultCategories.seed(context: context)
         }
+        deduplicateTags()
+    }
+
+    private func deduplicateTags() {
+        var descriptor = FetchDescriptor<Tag>()
+        descriptor.sortBy = [SortDescriptor(\Tag.sortOrder)]
+        let allTags = (try? context.fetch(descriptor)) ?? []
+        var kept: [String: Tag] = [:]
+        for tag in allTags {
+            if let existing = kept[tag.name] {
+                // Merge transactions from duplicate into the kept tag
+                for txn in tag.transactions where !existing.transactions.contains(where: { $0.id == txn.id }) {
+                    existing.transactions.append(txn)
+                }
+                context.delete(tag)
+            } else {
+                kept[tag.name] = tag
+            }
+        }
     }
 
     #if os(macOS)
-    private func navigateForTutorialStep() {
-        guard let nav = tutorial.currentStep?.navigation else { return }
-        let dest: SidebarDestination? = switch nav {
+    private func tutorialDestination(for nav: String) -> SidebarDestination? {
+        switch nav {
         case "overview": .overview
+        case "search": .search
         case "inbox": .inbox
         case "budgets": .budgets
         case "trends": .trends
         case "insights": .insights
+        case "networth": .netWorth
+        case "reports": .reports
+        case "goals": .goals
+        case "forecast": .forecast
+        case "tags": .tags
         case "scheduled": .scheduled
         case "rules": .rules
         default: nil
         }
-        if let dest { withAnimation { selection = dest } }
+    }
+
+    private func navigateForTutorialStep() {
+        guard let nav = tutorial.currentStep?.navigation else { return }
+        guard let dest = tutorialDestination(for: nav) else { return }
+
+        // Expand collapsed sections so the target row is visible
+        expandSectionForTutorial(dest)
+
+        withAnimation { selection = dest }
+    }
+
+    private func expandSectionForTutorial(_ dest: SidebarDestination) {
+        switch dest {
+        case .trends, .insights, .netWorth, .reports:
+            if analyticsCollapsed { withAnimation { analyticsCollapsed = false } }
+        case .scheduled, .subscriptions, .bills:
+            if scheduledCollapsed { withAnimation { scheduledCollapsed = false } }
+        case .goals, .forecast:
+            if planningCollapsed { withAnimation { planningCollapsed = false } }
+        case .budgets, .rules, .tags, .importExport:
+            if toolsCollapsed { withAnimation { toolsCollapsed = false } }
+        default:
+            break
+        }
+    }
+
+    private func scrollToTutorialStep(proxy: ScrollViewProxy) {
+        guard tutorial.isActive, let nav = tutorial.currentStep?.navigation else { return }
+        guard let dest = tutorialDestination(for: nav) else { return }
+
+        expandSectionForTutorial(dest)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                proxy.scrollTo(dest, anchor: .center)
+            }
+        }
     }
     #endif
 }

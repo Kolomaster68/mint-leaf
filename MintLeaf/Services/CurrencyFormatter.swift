@@ -7,6 +7,14 @@ struct CurrencyFormatter {
         UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
     }
 
+    var symbol: String {
+        let code = Self.defaultCurrency
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = code
+        return f.currencySymbol ?? "$"
+    }
+
     func format(_ amount: Decimal, currency: String? = nil) -> String {
         let code = currency ?? Self.defaultCurrency
         let f = NumberFormatter()

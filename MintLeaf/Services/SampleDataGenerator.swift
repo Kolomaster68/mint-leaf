@@ -236,6 +236,49 @@ struct SampleDataGenerator {
             context.insert(txn)
         }
 
+        // MARK: - Tags
+        // Remove any existing tags first to avoid duplicates on re-run
+        let existingTags = (try? context.fetch(FetchDescriptor<Tag>())) ?? []
+        for old in existingTags { context.delete(old) }
+
+        let tagBusiness = Tag(name: "Business", colorHex: "2196F3", sortOrder: 0)
+        let tagHoliday = Tag(name: "Holiday", colorHex: "FF9800", sortOrder: 1)
+        let tagTaxDeductible = Tag(name: "Tax Deductible", colorHex: "4CAF50", sortOrder: 2)
+        let tagEssential = Tag(name: "Essential", colorHex: "E91E63", sortOrder: 3)
+        let tagSplurge = Tag(name: "Splurge", colorHex: "9C27B0", sortOrder: 4)
+
+        context.insert(tagBusiness)
+        context.insert(tagHoliday)
+        context.insert(tagTaxDeductible)
+        context.insert(tagEssential)
+        context.insert(tagSplurge)
+
+        // Tag existing transactions — match broadly so every tag has entries
+        let allTxns = (try? context.fetch(FetchDescriptor<Transaction>())) ?? []
+        for txn in allTxns {
+            let title = txn.title.lowercased()
+            // Business: salary, freelance, and work-adjacent
+            if title.contains("freelance") || title.contains("salary") || title.contains("amazon prime") || title.contains("icloud") {
+                txn.tags.append(tagBusiness)
+            }
+            // Holiday: travel + dining out + entertainment
+            if title.contains("delta") || title.contains("marriott") || title.contains("doordash") || title.contains("amc") {
+                txn.tags.append(tagHoliday)
+            }
+            // Tax Deductible: housing, utilities, insurance, internet
+            if title.contains("rent") || title.contains("insurance") || title.contains("internet") || title.contains("con edison") || title.contains("water utility") || title.contains("t-mobile") {
+                txn.tags.append(tagTaxDeductible)
+            }
+            // Essential: groceries, utilities, transport, healthcare
+            if title.contains("whole foods") || title.contains("trader") || title.contains("kroger") || title.contains("chevron") || title.contains("shell") || title.contains("metro transit") || title.contains("cvs") || title.contains("walgreens") || title.contains("planet fitness") {
+                txn.tags.append(tagEssential)
+            }
+            // Splurge: shopping, dining, entertainment, fashion
+            if title.contains("nordstrom") || title.contains("h&m") || title.contains("barnes") || title.contains("target") || title.contains("starbucks") || title.contains("chipotle") || title.contains("chick-fil-a") || title.contains("panera") {
+                txn.tags.append(tagSplurge)
+            }
+        }
+
         let sampleRules: [(String, RuleMatchType, String)] = [
             ("Whole Foods", .contains, "Groceries"),
             ("Trader Joe", .startsWith, "Groceries"),
