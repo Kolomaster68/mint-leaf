@@ -6,13 +6,13 @@
 
 <p align="center">
   <strong>Your personal finance companion.</strong><br>
-  Track spending, set budgets, and stay in control.
+  Track spending, set budgets, forecast your finances, and stay in control.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.0.0-gold" alt="Version">
+  <img src="https://img.shields.io/badge/version-3.0.0-gold" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20iOS-blue" alt="Platform">
-  <img src="https://img.shields.io/badge/swift-5.9+-orange" alt="Swift">
+  <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift">
   <img src="https://img.shields.io/badge/swiftui-5.0-purple" alt="SwiftUI">
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License">
 </p>
@@ -39,35 +39,61 @@
   <img src="screenshots/dashboard-light.png" width="800" alt="Mint Leaf Dashboard">
 </p>
 
-## What's New in v2.0
+## What's New in v3.0
 
-- **Search** — Find any transaction instantly by name, category, account, notes, or amount
-- **Notification Centre** — In-app alerts for overdue bills, exceeded budgets, and upcoming payments
-- **Multi-Currency Support** — 39 currencies with automatic formatting and per-account currency
-- **Keyboard Shortcuts** — Navigate the app with `Cmd+1-5`, `Cmd+F`, `Cmd+B`, `Shift+Cmd+N`
-- **Reorganised Sidebar** — Grouped into Overview, Accounts, Analytics, Scheduled, Planning, and Tools
-- **Dashboard Upcoming Bills** — See what's due in the next 7 days at a glance
-- **Net Worth in Sidebar** — Total net worth displayed under your accounts
-- **Subscription Calendar** — Swipe-to-dismiss drawer, pause/resume subscriptions
-- **Updated Onboarding** — Refreshed 16-step guided tour covering all new features
-- **Consistent UI** — Proper padding across all sheets and popups
+v3.0 is the biggest update to Mint Leaf yet, adding five major features and a suite of quality-of-life improvements.
+
+### New Features
+
+- **Net Worth Tracker** — See your total net worth over time with an interactive chart, asset/liability breakdown, and per-account detail
+- **Reports** — Monthly and yearly financial reports with income/expense summaries, category pie charts, top merchant tables, and CSV export
+- **Goals & Wishlist** — Set savings goals with progress tracking, target dates, and daily savings calculations. Wishlist mode lets you track items you want to buy with links and purchase status
+- **Forecast** — Balance projections for 30/60/90 days or 6 months based on scheduled transactions, with what-if scenarios and runway calculations
+- **Tags** — Label transactions across categories with colour-coded tags. Tag from the transaction editor, view tagged transactions in the Tags panel, and filter spending by tag
+
+### Improvements
+
+- **Transfer Fix** — Transfers between accounts no longer inflate income and expense totals
+- **XLSX Import Fix** — Files with title rows before column headers now import correctly
+- **Balance Chart Fix** — Resolved looping artifacts and inverted area shading on the balance trend chart
+- **Swipe-to-Dismiss Notifications** — Dismiss alerts with a swipe; restore them anytime from the toolbar
+- **Persistent Notification State** — Dismissed notifications stay dismissed across app restarts
+- **Tag Picker in Transaction Editor** — Add or remove tags when creating or editing any transaction
+- **Streamlined Trends** — Category breakdown moved to Reports to reduce redundancy
 
 ## Features
 
+### Accounts & Transactions
 - **Multiple Accounts** — Track checking, savings, credit cards, and cash with live balances
-- **Powerful Search** — Find transactions by name, category, account, notes, or amount with filters
 - **Transaction Inbox** — Review and categorise uncategorised transactions in one place
+- **Powerful Search** — Find transactions by name, category, account, notes, or amount with filters
+- **Multi-Currency** — Support for 39 currencies with automatic formatting and per-account currency
+- **CSV, XLSX & PDF Import** — Import bank statements from CSV, Excel, or PDF documents
+- **Reconciliation** — Mark transactions as reconciled and compare against bank statements
+
+### Budgets & Planning
 - **Budgets** — Set monthly spending limits by category and track progress in real time
-- **Trends & Analytics** — Visualise spending patterns over time with interactive charts
-- **Smart Insights** — Cashflow forecasts, anomaly detection, and spending summaries
-- **Notification Centre** — Stay on top of due bills, exceeded budgets, and overdue items
+- **Goals & Wishlist** — Savings targets with progress rings, target dates, and daily savings needed. Wishlist mode for tracking items to buy
+- **Forecast** — Balance projections based on scheduled transactions with what-if scenarios
 - **Scheduled Transactions** — Manage recurring bills, subscriptions, and income on a calendar
+- **Subscription Calendar** — Visual calendar view of all subscriptions with pause/resume controls
+
+### Analytics
+- **Trends** — Visualise spending, income vs expense, and balance over time with interactive charts
+- **Smart Insights** — Cashflow forecasts, anomaly detection, and spending summaries
+- **Net Worth** — Historical net worth chart with asset/liability breakdown
+- **Reports** — Monthly and yearly reports with category pie charts, top merchants, and CSV export
+
+### Organisation
+- **Tags** — Colour-coded labels that work across categories for flexible transaction grouping
 - **Rules & Automation** — Auto-categorise transactions with pattern matching and merchant aliases
-- **Multi-Currency** — Support for 39 currencies with automatic formatting
-- **CSV & PDF Import** — Import bank statements from CSV files or PDF documents
+- **Notification Centre** — In-app alerts for due bills, exceeded budgets, and overdue items with swipe-to-dismiss
+
+### Privacy & Customisation
+- **Privacy First** — All data stays on your device. No accounts, no cloud, no tracking
+- **Light & Dark Mode** — Full support with custom app icons for each appearance
 - **Keyboard Shortcuts** — Full keyboard navigation for power users
-- **Interactive Tutorial** — Guided 16-step tour with sample data to learn the app
-- **Privacy First** — All data stays on your device
+- **Interactive Tutorial** — Guided walkthrough with sample data to learn the app
 
 ## Screenshots
 
@@ -108,7 +134,7 @@
 ### Build from Source
 
 1. Clone the repository
-2. Open `MintLeaf.xcodeproj` in Xcode 15+
+2. Open `MintLeaf.xcodeproj` in Xcode 16+
 3. Select the `MintLeaf_macOS` or `MintLeaf_iOS` scheme
 4. Build and run
 
@@ -119,7 +145,7 @@ No external dependencies required.
 New users are guided through a polished onboarding flow with three options:
 
 1. **Start Fresh** — Jump straight into the app
-2. **Load Sample Data & Take a Tour** — Explore with demo data and a guided 16-step walkthrough
+2. **Load Sample Data & Take a Tour** — Explore with demo data and a guided walkthrough
 3. **Load Sample Data** — Demo data without the tour
 
 <table>
@@ -167,33 +193,67 @@ Mint Leaf ships with both light and dark app icons that match the system appeara
 | UI | SwiftUI 5 |
 | Data | SwiftData |
 | Platform | macOS 14+ / iOS 17+ |
-| Language | Swift 5.9+ |
+| Language | Swift 6 |
 | Architecture | MVVM with @Observable |
 
 ## Roadmap
 
-Mint Leaf is under active development. Here's what's planned:
+Mint Leaf is under active development. Here's what's been shipped and what's coming next.
 
-| Status | Feature |
-|--------|---------|
-| :white_check_mark: | **Multi-Currency Support** — 39 currencies with automatic formatting |
-| :white_check_mark: | **Search** — Full transaction search with filters |
-| :white_check_mark: | **In-App Notifications** — Alerts for bills, budgets, and overdue items |
-| :white_check_mark: | **Keyboard Shortcuts** — Full keyboard navigation |
-| :white_check_mark: | **DMG Distribution** — macOS release for direct download |
-| :construction: | **Net Worth Tracker** — Historical net worth chart and breakdown |
-| :construction: | **Receipt Scanning** — Attach photos or scan receipts |
-| :date: | **Push Notifications** — System notifications for upcoming bills |
-| :date: | **Export Reports** — Generate PDF and Excel summaries |
-| :date: | **Widgets** — At-a-glance spending and balance widgets |
-| :date: | **Shared Budgets** — Collaborate on budgets with family |
-| :date: | **Goal Tracking** — Set savings targets and track progress |
-| :date: | **Apple Watch App** — Quick balance checks from your wrist |
-| :date: | **Bank Integration** — Connect accounts via Plaid or Open Banking |
+### Shipped
 
-:white_check_mark: = Done &nbsp; :construction: = In Progress &nbsp; :date: = Planned
+| Version | Feature |
+|---------|---------|
+| v1.0 | Accounts, Transactions, Categories, Budgets |
+| v1.0 | CSV & PDF Import |
+| v1.0 | Rules & Merchant Aliases |
+| v1.0 | Trends & Insights |
+| v1.0 | Scheduled Transactions & Subscription Calendar |
+| v1.0 | Interactive Onboarding Tutorial |
+| v2.0 | Multi-Currency Support (39 currencies) |
+| v2.0 | Search with Filters |
+| v2.0 | In-App Notification Centre |
+| v2.0 | Keyboard Shortcuts |
+| v2.0 | Reorganised Sidebar |
+| v2.0 | DMG Distribution |
+| v2.1 | XLSX (Excel) Import |
+| v2.1 | Privacy Dashboard |
+| v3.0 | Net Worth Tracker |
+| v3.0 | Reports with CSV Export |
+| v3.0 | Goals & Wishlist |
+| v3.0 | Cashflow Forecast |
+| v3.0 | Tags & Tag Picker |
+| v3.0 | Transfer Calculation Fix |
+
+### Coming in v3.x
+
+These features are actively being explored for upcoming releases:
+
+| Feature | Description |
+|---------|-------------|
+| **Dashboard Customisation** | Choose which cards appear on your dashboard and reorder them to suit your workflow |
+| **Dark/Light Theme Refinements** | Enhanced colour palettes, improved contrast, and more consistent styling across all views |
+| **Recurring Transaction Detection** | Automatically detect recurring patterns when importing bank statements and suggest scheduled transactions |
+| **Expanded Keyboard Shortcuts** | More shortcuts for common actions across all views |
+| **Shared Budgets** | Export and import budgets as JSON files to share with family or partners — no cloud account needed |
+| **Split Transactions** | Split a single transaction across multiple categories, people, or accounts for shared expenses |
+
+### Future Considerations
+
+| Feature | Notes |
+|---------|-------|
+| Receipt Scanning | Attach photos or scan receipts to extract amounts |
+| Onboarding v3 | Updated tutorial covering Net Worth, Reports, Goals, Forecast, and Tags |
+| Fresh Screenshots | New screenshots showcasing all v3 features |
+| Widgets | At-a-glance spending and balance widgets (requires Apple Developer account) |
+| Apple Watch | Quick balance checks from your wrist (requires Apple Developer account) |
+| Bank Integration | Connect accounts via Plaid or Open Banking |
 
 Have a feature request? [Open an issue](https://github.com/Kolomaster68/mint-leaf/issues).
+
+## Contributing
+
+Contributions are welcome! Fork the repo, create a branch, and submit a pull request. Please keep PRs focused and include a clear description of the change.
 
 ## License
 
