@@ -33,8 +33,12 @@ struct MintLeafApp: App {
         do {
             container = try ModelContainer(for: schema, configurations: [config])
         } catch {
-            // Migration failed — delete corrupt store and retry
+            // Migration failed — back up the store before resetting
             let storeURL = config.url
+            let backupURL = storeURL.deletingLastPathComponent()
+                .appendingPathComponent("MintLeaf-backup-\(Int(Date().timeIntervalSince1970)).store")
+            try? FileManager.default.copyItem(at: storeURL, to: backupURL)
+
             let related = [
                 storeURL,
                 storeURL.appendingPathExtension("shm"),
@@ -45,6 +49,7 @@ struct MintLeafApp: App {
             }
             do {
                 container = try ModelContainer(for: schema, configurations: [config])
+                print("⚠️ SwiftData store was reset due to migration error. Backup saved to \(backupURL.path)")
             } catch {
                 fatalError("Failed to configure SwiftData after reset: \(error)")
             }
