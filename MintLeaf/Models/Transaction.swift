@@ -10,6 +10,7 @@ final class Transaction {
     var date: Date
     var isReconciled: Bool
     var checkNumber: String?
+    var location: String?
 
     var account: Account?
 

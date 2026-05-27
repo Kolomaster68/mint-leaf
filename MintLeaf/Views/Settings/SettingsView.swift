@@ -32,11 +32,15 @@ struct SettingsView: View {
 
     enum SettingsTab: String, CaseIterable {
         case general = "General"
+        case notifications = "Notifications"
+        case shortcuts = "Shortcuts"
         case categories = "Categories"
 
         var icon: String {
             switch self {
             case .general: return "gear"
+            case .notifications: return "bell"
+            case .shortcuts: return "keyboard"
             case .categories: return "tag"
             }
         }
@@ -123,6 +127,10 @@ struct SettingsView: View {
                 switch settingsTab {
                 case .general:
                     generalTab
+                case .notifications:
+                    notificationsTab
+                case .shortcuts:
+                    shortcutsTab
                 case .categories:
                     categoriesTab
                 }
@@ -219,6 +227,143 @@ struct SettingsView: View {
             cats.sort { categorySortAscending ? (totals[$0.id] ?? 0) < (totals[$1.id] ?? 0) : (totals[$0.id] ?? 0) > (totals[$1.id] ?? 0) }
         }
         return cats
+    }
+
+    private var notificationsTab: some View {
+        let manager = NotificationManager.shared
+        return Form {
+            Section("Alert Types") {
+                Toggle("Bills & Payments", isOn: Binding(
+                    get: { manager.showBills },
+                    set: { manager.showBills = $0 }
+                ))
+                Toggle("Budget Warnings", isOn: Binding(
+                    get: { manager.showBudgets },
+                    set: { manager.showBudgets = $0 }
+                ))
+                Toggle("Balance Alerts", isOn: Binding(
+                    get: { manager.showBalances },
+                    set: { manager.showBalances = $0 }
+                ))
+                Toggle("Subscription Reminders", isOn: Binding(
+                    get: { manager.showSubscriptions },
+                    set: { manager.showSubscriptions = $0 }
+                ))
+            }
+
+            Section("Thresholds") {
+                HStack {
+                    Text("Low balance warning below")
+                    Spacer()
+                    TextField("Amount", value: Binding(
+                        get: { Double(truncating: manager.lowBalanceThreshold as NSDecimalNumber) },
+                        set: { manager.lowBalanceThreshold = Decimal($0) }
+                    ), format: .number)
+                    .frame(width: 80)
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                }
+
+                HStack {
+                    Text("Credit card debt warning above")
+                    Spacer()
+                    TextField("Amount", value: Binding(
+                        get: { Double(truncating: manager.ccHighThreshold as NSDecimalNumber) },
+                        set: { manager.ccHighThreshold = Decimal($0) }
+                    ), format: .number)
+                    .frame(width: 80)
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                }
+            }
+
+            Section("Actions") {
+                Button("Dismiss All Notifications") {
+                    let notifs = manager.generateNotifications(
+                        scheduled: (try? context.fetch(FetchDescriptor<ScheduledTransaction>())) ?? [],
+                        budgets: (try? context.fetch(FetchDescriptor<Budget>())) ?? [],
+                        accounts: (try? context.fetch(FetchDescriptor<Account>())) ?? []
+                    )
+                    manager.dismissAll(notifs)
+                    showStatus("All notifications dismissed")
+                }
+
+                Button("Restore All Dismissed") {
+                    manager.restoreAll()
+                    showStatus("All notifications restored")
+                }
+                .disabled(!manager.hasDismissedOrSnoozed)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private var shortcutsTab: some View {
+        Form {
+            ForEach(KeyboardShortcutInfo.ShortcutSection.allCases, id: \.self) { section in
+                Section(section.rawValue) {
+                    let shortcuts = ShortcutReference.all.filter { $0.section == section }
+                    ForEach(shortcuts) { shortcut in
+                        HStack {
+                            Text(shortcut.label)
+                                .font(.subheadline)
+                            Spacer()
+                            HStack(spacing: 3) {
+                                ForEach(shortcutKeyParts(shortcut.modifiers + shortcut.key), id: \.self) { part in
+                                    Text(part)
+                                        .font(.system(.caption, design: .rounded).weight(.medium))
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 3)
+                                        .background(AppTheme.cardBackground(for: scheme), in: RoundedRectangle(cornerRadius: 5))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 5)
+                                                .strokeBorder(.quaternary, lineWidth: 1)
+                                        )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Section {
+                HStack {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(.secondary)
+                    Text("Shortcuts are available from the menu bar. Settings can be opened with ⌘,")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func shortcutKeyParts(_ combo: String) -> [String] {
+        var parts: [String] = []
+        var remaining = combo
+
+        // Extract modifier symbols
+        let modifiers: [(String, String)] = [
+            ("⇧", "⇧"),
+            ("⌃", "⌃"),
+            ("⌥", "⌥"),
+            ("⌘", "⌘"),
+        ]
+
+        for (symbol, display) in modifiers {
+            if remaining.contains(symbol) {
+                parts.append(display)
+                remaining = remaining.replacingOccurrences(of: symbol, with: "")
+            }
+        }
+
+        // The remaining character(s) are the key
+        let key = remaining.trimmingCharacters(in: .whitespaces)
+        if !key.isEmpty {
+            parts.append(key)
+        }
+        return parts
     }
 
     private var categoriesTab: some View {
@@ -938,6 +1083,8 @@ struct SettingsView: View {
             defaults.removeObject(forKey: "highContrastMode")
             defaults.removeObject(forKey: "reduceMotion")
             defaults.removeObject(forKey: "biometricLockEnabled")
+            DashboardConfig.shared.resetToDefaults()
+            NotificationManager.shared.restoreAll()
             for flow in TutorialLibrary.allFlows {
                 defaults.removeObject(forKey: "tutorial_\(flow.id)_completed")
             }

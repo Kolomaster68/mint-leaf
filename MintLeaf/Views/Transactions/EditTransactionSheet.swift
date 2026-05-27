@@ -20,6 +20,7 @@ struct EditTransactionSheet: View {
     @State private var isTransfer = false
     @State private var transferAccount: Account?
     @State private var selectedTags: Set<UUID> = []
+    @State private var location = ""
 
     private var isEditing: Bool { transaction != nil }
 
@@ -64,6 +65,12 @@ struct EditTransactionSheet: View {
                 Section {
                     TextField("Notes", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
+                    HStack(spacing: 6) {
+                        Image(systemName: "mappin")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                        TextField("Location (optional)", text: $location)
+                    }
                 }
 
                 if !allTags.isEmpty {
@@ -110,6 +117,7 @@ struct EditTransactionSheet: View {
                     Section {
                         Button("Delete Transaction", role: .destructive) {
                             if let transaction {
+                                account.adjustBalance(by: -transaction.amount)
                                 context.delete(transaction)
                             }
                             dismiss()
@@ -143,6 +151,7 @@ struct EditTransactionSheet: View {
         isExpense = t.isExpense
         date = t.date
         notes = t.notes
+        location = t.location ?? ""
         selectedCategory = t.category
         selectedTags = Set(t.tags.map(\.id))
         if let dest = t.transferDestination {
@@ -158,13 +167,16 @@ struct EditTransactionSheet: View {
         let tagsToApply = allTags.filter { selectedTags.contains($0.id) }
 
         if let t = transaction {
+            let oldAmount = t.amount
             t.title = title
             t.amount = signedAmount
             t.date = date
             t.notes = notes
+            t.location = location.isEmpty ? nil : location
             t.category = selectedCategory
             t.transferDestination = isTransfer ? transferAccount : nil
             t.tags = tagsToApply
+            account.adjustBalance(by: signedAmount - oldAmount)
         } else {
             let t = Transaction(
                 amount: signedAmount,
@@ -174,9 +186,11 @@ struct EditTransactionSheet: View {
                 category: selectedCategory,
                 account: account
             )
+            t.location = location.isEmpty ? nil : location
             t.transferDestination = isTransfer ? transferAccount : nil
             t.tags = tagsToApply
             context.insert(t)
+            account.adjustBalance(by: signedAmount)
 
             if isTransfer, let dest = transferAccount {
                 let mirror = Transaction(
@@ -189,6 +203,7 @@ struct EditTransactionSheet: View {
                 )
                 mirror.transferDestination = account
                 context.insert(mirror)
+                dest.adjustBalance(by: -signedAmount)
             }
         }
         dismiss()

@@ -311,6 +311,11 @@ struct SampleDataGenerator {
             let alias = MerchantAlias(rawPattern: raw, cleanName: clean, matchType: matchType)
             context.insert(alias)
         }
+
+        // Recalculate cached balances for all accounts
+        for account in [checking, savings, creditCard, cash] {
+            account.recalculateBalance()
+        }
     }
 
     private static func fetchCategories(context: ModelContext) -> [Category] {

@@ -51,6 +51,7 @@ enum ScheduledTransactionProcessor {
                         )
                         transaction.scheduledSource = scheduled
                         context.insert(transaction)
+                        account.adjustBalance(by: scheduled.amount)
                     }
                 }
 

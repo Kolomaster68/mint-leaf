@@ -21,12 +21,13 @@ struct ImportExportView: View {
     @State private var exportAccountID: PersistentIdentifier?
 
     enum ImportType: Identifiable {
-        case csv, pdf, excel
+        case csv, pdf, excel, bankFile
         var id: String {
             switch self {
             case .csv: return "csv"
             case .pdf: return "pdf"
             case .excel: return "excel"
+            case .bankFile: return "bankFile"
             }
         }
     }
@@ -56,6 +57,8 @@ struct ImportExportView: View {
                     PDFImportView(account: account)
                 case .excel:
                     ExcelImportView(account: account)
+                case .bankFile:
+                    BankFileImportView(account: account)
                 }
             }
         }
@@ -111,26 +114,32 @@ struct ImportExportView: View {
                 LazyVGrid(columns: [
                     GridItem(.flexible(), spacing: 12),
                     GridItem(.flexible(), spacing: 12),
-                    GridItem(.flexible(), spacing: 12),
                 ], spacing: 12) {
                     importCard(
-                        title: "CSV / OFX",
+                        title: "CSV",
                         icon: "tablecells",
-                        description: "Comma-separated values or bank export files",
+                        description: "Comma-separated values",
                         color: .blue,
                         type: .csv
                     )
                     importCard(
+                        title: "Bank File",
+                        icon: "building.columns",
+                        description: "OFX, QFX, or QIF bank exports",
+                        color: .teal,
+                        type: .bankFile
+                    )
+                    importCard(
                         title: "PDF Statement",
                         icon: "doc.richtext",
-                        description: "Bank or credit card statement PDFs",
+                        description: "Bank or credit card PDFs",
                         color: .red,
                         type: .pdf
                     )
                     importCard(
                         title: "Spreadsheet",
                         icon: "tablecells.badge.ellipsis",
-                        description: "Excel .xlsx workbooks with multiple sheets",
+                        description: "Excel .xlsx workbooks",
                         color: .green,
                         type: .excel
                     )

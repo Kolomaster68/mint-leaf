@@ -43,6 +43,7 @@ struct ContentView: View {
     @AppStorage("shouldStartTutorial") private var shouldStartTutorial = false
     @State private var isUnlocked = false
     @State private var showingNotifications = false
+    @State private var showingNewTransaction = false
     @State private var tutorial = TutorialEngine.shared
 
     var body: some View {
@@ -80,6 +81,7 @@ struct ContentView: View {
         .focusedSceneValue(\.sidebarSelection, $selection)
         .focusedSceneValue(\.showNewAccount, $showingNewAccount)
         .focusedSceneValue(\.showNotifications, $showingNotifications)
+        .focusedSceneValue(\.showNewTransaction, $showingNewTransaction)
         .tutorialOverlay(tutorial)
         .onChange(of: tutorial.currentStepIndex) { _, _ in
             navigateForTutorialStep()
@@ -132,34 +134,12 @@ struct ContentView: View {
     }
 
     #if os(macOS)
-    @AppStorage("dismissedNotifications") private var dismissedNotifData: Data = Data()
-
     private var notificationBadgeCount: Int {
-        let dismissed = (try? JSONDecoder().decode(Set<String>.self, from: dismissedNotifData)) ?? []
-        var count = 0
-        let today = Date()
-        // Overdue or due within 3 days
-        for item in scheduledItems where item.isActive {
-            if item.nextDate <= today && !dismissed.contains("overdue-\(item.title)") { count += 1 }
-            else if item.nextDate <= Calendar.current.date(byAdding: .day, value: 3, to: today) ?? today
-                        && !dismissed.contains("due-soon-\(item.title)") { count += 1 }
-        }
-
-        // Budget items over 80%
-        for budget in budgets {
-            for item in budget.items {
-                guard let category = item.category else { continue }
-                if item.progress >= 1.0 && !dismissed.contains("budget-exceeded-\(category.name)") { count += 1 }
-                else if item.progress >= 0.8 && !dismissed.contains("budget-warning-\(category.name)") { count += 1 }
-            }
-        }
-
-        // Negative non-credit-card accounts
-        for account in accounts where !account.isArchived && account.type != .creditCard {
-            if account.currentBalance < 0 && !dismissed.contains("negative-\(account.name)") { count += 1 }
-        }
-
-        return count
+        NotificationManager.shared.badgeCount(
+            scheduled: scheduledItems,
+            budgets: budgets,
+            accounts: accounts
+        )
     }
 
     private var sidebar: some View {
@@ -410,6 +390,13 @@ struct ContentView: View {
         .sheet(isPresented: $showingNewAccount) {
             NewAccountSheet()
         }
+        .sheet(isPresented: $showingNewTransaction) {
+            if let currentAccount = currentAccountForNewTransaction {
+                EditTransactionSheet(account: currentAccount)
+            } else if let firstAccount = accounts.first(where: { !$0.isArchived }) {
+                EditTransactionSheet(account: firstAccount)
+            }
+        }
         .sheet(item: $editingAccount) { account in
             NewAccountSheet(account: account)
         }
@@ -598,6 +585,16 @@ struct ContentView: View {
             DefaultCategories.seed(context: context)
         }
         deduplicateTags()
+        recalculateBalancesIfNeeded()
+    }
+
+    private func recalculateBalancesIfNeeded() {
+        let key = "balancesCacheMigrated"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        for account in accounts {
+            account.recalculateBalance()
+        }
+        UserDefaults.standard.set(true, forKey: key)
     }
 
     private func deduplicateTags() {
@@ -661,6 +658,11 @@ struct ContentView: View {
         default:
             break
         }
+    }
+
+    private var currentAccountForNewTransaction: Account? {
+        if case .account(let acct) = selection { return acct }
+        return nil
     }
 
     private func scrollToTutorialStep(proxy: ScrollViewProxy) {
