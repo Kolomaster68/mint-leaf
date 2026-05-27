@@ -196,6 +196,7 @@ struct CSVImportView: View {
             rules: rules
         )
 
+        account.recalculateBalance()
         importResult = result
     }
 }

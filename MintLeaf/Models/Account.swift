@@ -17,8 +17,18 @@ final class Account {
     @Relationship(deleteRule: .cascade, inverse: \Transaction.account)
     var transactions: [Transaction]
 
+    var cachedBalance: Decimal
+
     var currentBalance: Decimal {
-        initialBalance + transactions.reduce(Decimal.zero) { $0 + $1.amount }
+        cachedBalance
+    }
+
+    func recalculateBalance() {
+        cachedBalance = initialBalance + transactions.reduce(Decimal.zero) { $0 + $1.amount }
+    }
+
+    func adjustBalance(by amount: Decimal) {
+        cachedBalance += amount
     }
 
     init(
@@ -41,6 +51,7 @@ final class Account {
         self.isArchived = false
         self.createdAt = Date()
         self.transactions = []
+        self.cachedBalance = initialBalance
     }
 }
 

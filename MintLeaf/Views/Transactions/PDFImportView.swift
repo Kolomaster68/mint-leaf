@@ -290,6 +290,7 @@ struct PDFImportView: View {
             account.initialBalance = opening
         }
 
+        account.recalculateBalance()
         importCount = count
         duplicatesSkipped = dupes
         didImport = true

@@ -41,6 +41,11 @@ struct TransactionRow: View {
                     if showAccount, let acc = transaction.account {
                         Text("· \(acc.name)")
                     }
+                    if let loc = transaction.location, !loc.isEmpty {
+                        Image(systemName: "mappin")
+                            .font(.caption2)
+                        Text(loc)
+                    }
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)

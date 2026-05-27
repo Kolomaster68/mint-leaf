@@ -17,22 +17,34 @@ enum AppAppearance: String, CaseIterable, Identifiable {
 }
 
 struct AppTheme {
+    // MARK: - Accent colours (gold for dark, silver-slate for light)
     static let gold = Color(red: 0.855, green: 0.694, blue: 0.220)
     static let goldLight = Color(red: 0.92, green: 0.80, blue: 0.45)
     static let goldDark = Color(red: 0.65, green: 0.50, blue: 0.12)
 
-    static let silver = Color(red: 0.42, green: 0.44, blue: 0.50)
-    static let silverLight = Color(red: 0.55, green: 0.57, blue: 0.63)
-    static let silverDark = Color(red: 0.32, green: 0.34, blue: 0.40)
+    static let silver = Color(red: 0.38, green: 0.42, blue: 0.50)
+    static let silverLight = Color(red: 0.50, green: 0.54, blue: 0.62)
+    static let silverDark = Color(red: 0.28, green: 0.32, blue: 0.40)
 
-    static let trueBlack = Color(red: 0.06, green: 0.06, blue: 0.06)
-    static let darkSurface = Color(red: 0.10, green: 0.10, blue: 0.10)
-    static let darkCard = Color(red: 0.13, green: 0.13, blue: 0.13)
-    static let darkSidebar = Color(red: 0.08, green: 0.08, blue: 0.08)
+    // MARK: - Dark mode surfaces (warm-tinted for depth)
+    static let trueBlack = Color(red: 0.05, green: 0.05, blue: 0.055)
+    static let darkSurface = Color(red: 0.09, green: 0.09, blue: 0.095)
+    static let darkCard = Color(red: 0.12, green: 0.12, blue: 0.125)
+    static let darkCardElevated = Color(red: 0.15, green: 0.15, blue: 0.155)
+    static let darkSidebar = Color(red: 0.065, green: 0.065, blue: 0.07)
+    static let darkDivider = Color(red: 0.20, green: 0.20, blue: 0.21)
 
-    static let lightSurface = Color(red: 0.96, green: 0.96, blue: 0.97)
+    // MARK: - Light mode surfaces
+    static let lightSurface = Color(red: 0.955, green: 0.955, blue: 0.965)
     static let lightCard = Color.white
-    static let lightSidebar = Color(red: 0.94, green: 0.94, blue: 0.95)
+    static let lightCardElevated = Color(red: 0.99, green: 0.99, blue: 1.0)
+    static let lightSidebar = Color(red: 0.935, green: 0.935, blue: 0.945)
+    static let lightDivider = Color(red: 0.85, green: 0.85, blue: 0.87)
+
+    // MARK: - Semantic colours
+    static let income = Color(red: 0.20, green: 0.78, blue: 0.35)
+    static let expense = Color(red: 0.92, green: 0.30, blue: 0.24)
+    static let warning = Color(red: 0.95, green: 0.65, blue: 0.15)
 
     static func accent(for scheme: ColorScheme) -> Color {
         scheme == .dark ? gold : silver
@@ -50,12 +62,20 @@ struct AppTheme {
         scheme == .dark ? darkCard : lightCard
     }
 
+    static func cardElevated(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? darkCardElevated : lightCardElevated
+    }
+
     static func surfaceBackground(for scheme: ColorScheme) -> Color {
         scheme == .dark ? trueBlack : lightSurface
     }
 
     static func sidebarBackground(for scheme: ColorScheme) -> Color {
         scheme == .dark ? darkSidebar : lightSidebar
+    }
+
+    static func divider(for scheme: ColorScheme) -> Color {
+        scheme == .dark ? darkDivider : lightDivider
     }
 }
 
@@ -70,9 +90,17 @@ struct PremiumCardModifier: ViewModifier {
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
                     .strokeBorder(
-                        AppTheme.accent(for: scheme).opacity(highContrast ? 0.4 : 0.15),
+                        scheme == .dark
+                            ? AppTheme.accent(for: scheme).opacity(highContrast ? 0.35 : 0.12)
+                            : AppTheme.accent(for: scheme).opacity(highContrast ? 0.4 : 0.15),
                         lineWidth: highContrast ? 2 : 1
                     )
+            )
+            .shadow(
+                color: scheme == .light
+                    ? Color.black.opacity(0.04)
+                    : Color.clear,
+                radius: 8, x: 0, y: 2
             )
     }
 }

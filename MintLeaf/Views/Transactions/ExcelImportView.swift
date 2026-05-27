@@ -357,6 +357,7 @@ struct ExcelImportView: View {
             rules: rules
         )
 
+        account.recalculateBalance()
         importResult = ImportResult(imported: imported, duplicates: duplicates, skipped: skipped)
     }
 }
