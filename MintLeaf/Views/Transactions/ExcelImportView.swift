@@ -214,7 +214,9 @@ struct ExcelImportView: View {
                 }
                 Spacer()
                 Toggle("Detect duplicates", isOn: $detectDuplicates)
+                    #if os(macOS)
                     .toggleStyle(.checkbox)
+                    #endif
             }
             .padding(.horizontal)
             .padding(.vertical, 8)

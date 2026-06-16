@@ -22,6 +22,17 @@ struct SampleDataGenerator {
         let creditCard = Account(name: "Amex Gold", type: .creditCard, currency: "USD", initialBalance: 0, icon: "creditcard", colorHex: "#FF9800", sortOrder: 2)
         let cash = Account(name: "Cash Wallet", type: .cash, currency: "USD", initialBalance: 340, icon: "dollarsign.circle", colorHex: "#9C27B0", sortOrder: 3)
 
+        // Demonstrate the credit card billing cycle: statement on the 15th,
+        // payment due 21 days later, paid from Chase Checking.
+        creditCard.statementDay = 15
+        creditCard.paymentDueOffsetDays = 21
+        creditCard.paymentSourceAccountID = checking.id
+        creditCard.purchaseAPR = 22.9 // so the "pay in full" interest estimate appears
+        // Give the funding account an arranged overdraft so funds warnings are realistic.
+        checking.overdraftLimit = 500
+        checking.overdraftEAR = 39.9
+        checking.unarrangedOverdraftFee = 20
+
         context.insert(checking)
         context.insert(savings)
         context.insert(creditCard)

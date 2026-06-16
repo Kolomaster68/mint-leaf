@@ -5,8 +5,9 @@ import SwiftData
 
 enum DashboardCard: String, CaseIterable, Identifiable, Codable {
     case heroBalance = "Net Worth"
-    case summaryCards = "Income & Expenses"
+    case creditCardDue = "Credit Card Payments"
     case financialHealth = "Financial Health"
+    case summaryCards = "Income & Expenses"
     case upcomingBills = "Upcoming Bills"
     case subscriptions = "Subscriptions"
     case recentTransactions = "Recent Transactions"
@@ -16,6 +17,7 @@ enum DashboardCard: String, CaseIterable, Identifiable, Codable {
     var icon: String {
         switch self {
         case .heroBalance: return "banknote"
+        case .creditCardDue: return "creditcard"
         case .summaryCards: return "arrow.up.arrow.down"
         case .financialHealth: return "heart.text.clipboard"
         case .upcomingBills: return "calendar.badge.clock"
@@ -84,6 +86,17 @@ struct DashboardView: View {
     @State private var showingCustomise = false
     private let config = DashboardConfig.shared
 
+    /// Called when the user taps "Review" on the data-health banner.
+    var onReviewDataHealth: (() -> Void)? = nil
+
+    /// Accounts whose cached balance has drifted from opening balance + transactions.
+    private var driftedAccounts: [Account] {
+        accounts.filter { account in
+            let expected = account.initialBalance + account.transactions.reduce(Decimal.zero) { $0 + $1.amount }
+            return abs(account.currentBalance - expected) >= Decimal(0.01)
+        }
+    }
+
     private var recentTransactions: [Transaction] {
         let cutoff = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
         return allTransactions.filter { $0.date > cutoff }
@@ -123,17 +136,39 @@ struct DashboardView: View {
     private var upcomingBills: [ScheduledTransaction] {
         let sevenDays = Calendar.current.date(byAdding: .day, value: 7, to: Date()) ?? Date()
         return scheduledTransactions
-            .filter { $0.isActive && $0.nextDate <= sevenDays }
+            .filter { $0.isActive && !$0.isSubscription && $0.nextDate <= sevenDays }
             .sorted { $0.nextDate < $1.nextDate }
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
+                // Data-health banner: surfaces a balance discrepancy where the
+                // user looks daily, with a one-tap route to fix it.
+                if !driftedAccounts.isEmpty {
+                    dataHealthBanner
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                }
+
+                // When a credit card payment is urgent, float it to the very top
+                // regardless of the user's saved order, with an attention border.
+                if hasUrgentCreditCardPayment && config.isVisible(.creditCardDue) {
+                    creditCardDueCard
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(AppTheme.warning, lineWidth: scheme == .dark ? 2 : 3)
+                        )
+                        .shadow(color: AppTheme.warning.opacity(scheme == .dark ? 0 : 0.25), radius: 6, y: 2)
+                        .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
+
                 ForEach(config.cardOrder) { card in
                     if config.isVisible(card) {
-                        cardView(for: card)
-                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        // Skip the credit card card here if it's been promoted above
+                        if !(card == .creditCardDue && hasUrgentCreditCardPayment) {
+                            cardView(for: card)
+                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        }
                     }
                 }
             }
@@ -160,6 +195,10 @@ struct DashboardView: View {
         switch card {
         case .heroBalance:
             heroBalance
+        case .creditCardDue:
+            if !creditCardsWithCycle.isEmpty {
+                creditCardDueCard
+            }
         case .summaryCards:
             summaryCards
         case .financialHealth:
@@ -197,6 +236,8 @@ struct DashboardView: View {
                 Text(CurrencyFormatter.shared.format(totalAssets))
                     .font(.title3.bold().monospacedDigit())
                     .foregroundStyle(AppTheme.income)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -206,6 +247,8 @@ struct DashboardView: View {
                     .foregroundStyle(AppTheme.accent(for: scheme))
                 Text(CurrencyFormatter.shared.format(totalBalance))
                     .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
                 HStack(spacing: 4) {
                     Image(systemName: isPositive ? "arrow.up.right" : "arrow.down.right")
                         .font(.subheadline.bold())
@@ -223,6 +266,8 @@ struct DashboardView: View {
                 Text(CurrencyFormatter.shared.format(totalLiabilities))
                     .font(.title3.bold().monospacedDigit())
                     .foregroundStyle(AppTheme.expense)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }
@@ -314,7 +359,7 @@ struct DashboardView: View {
 
     private var subscriptionsCard: some View {
         let subs = activeSubscriptions
-        let monthlyTotal = subs.reduce(Decimal.zero) { $0 + $1.monthlyEquivalent }
+        let monthlyTotal = subs.reduce(Decimal.zero) { $0 + $1.convertedMonthlyEquivalent }
         let yearlyTotal = monthlyTotal * 12
 
         return VStack(alignment: .leading, spacing: 14) {
@@ -349,7 +394,7 @@ struct DashboardView: View {
             Divider()
                 .overlay(AppTheme.divider(for: scheme))
 
-            let sortedSubs = subs.sorted(by: { $0.monthlyEquivalent > $1.monthlyEquivalent })
+            let sortedSubs = subs.sorted(by: { $0.convertedMonthlyEquivalent > $1.convertedMonthlyEquivalent })
             let visibleSubs = showAllSubscriptions ? sortedSubs : Array(sortedSubs.prefix(5))
 
             ForEach(visibleSubs, id: \.id) { sub in
@@ -357,7 +402,7 @@ struct DashboardView: View {
                     Text(sub.title)
                         .font(.body)
                     Spacer()
-                    Text(CurrencyFormatter.shared.format(sub.amount))
+                    Text(CurrencyFormatter.shared.format(sub.convertedAmount))
                         .font(.body.monospacedDigit())
                         .foregroundStyle(.secondary)
                     Text("/\(sub.frequency == .yearly ? "yr" : "mo")")
@@ -384,6 +429,176 @@ struct DashboardView: View {
             }
         }
         .premiumCard()
+    }
+
+    // MARK: - Data Health Banner
+
+    private var dataHealthBanner: some View {
+        let names = driftedAccounts.map(\.name)
+        let detail: String = {
+            if names.count == 1 { return "\(names[0])'s balance doesn't match its transactions." }
+            return "\(names.count) account balances don't match their transactions."
+        }()
+
+        return HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.title3)
+                .foregroundStyle(AppTheme.warning)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Balance needs attention")
+                    .font(.subheadline.weight(.semibold))
+                Text(detail)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Spacer()
+
+            Button {
+                onReviewDataHealth?()
+            } label: {
+                Text("Review")
+                    .font(.subheadline.weight(.medium))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.warning)
+        }
+        .padding(16)
+        .background(AppTheme.warning.opacity(scheme == .dark ? 0.12 : 0.10), in: RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .strokeBorder(AppTheme.warning.opacity(0.35), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Credit Card Payment Due Card
+
+    private var creditCardsWithCycle: [Account] {
+        accounts.filter { !$0.isArchived && $0.hasBillingCycle }
+    }
+
+    /// True when any credit card has an outstanding statement balance due within 5 days (or overdue).
+    private var hasUrgentCreditCardPayment: Bool {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        return creditCardsWithCycle.contains { card in
+            guard card.statementBalance > 0, !card.statementSettled,
+                  let due = card.nextPaymentDueDate() else { return false }
+            let days = cal.dateComponents([.day], from: today, to: cal.startOfDay(for: due)).day ?? 99
+            return days <= 5
+        }
+    }
+
+    private var creditCardDueCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Label("Credit Card Payments", systemImage: "creditcard")
+                    .font(.headline)
+                Spacer()
+            }
+
+            ForEach(creditCardsWithCycle) { card in
+                let due = card.nextPaymentDueDate()
+                let statementBal = card.statementBalance
+                let settled = card.statementSettled && statementBal > 0
+                let partial = card.statementPartiallyPaid
+                let daysUntil = due.map { Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: Calendar.current.startOfDay(for: $0)).day ?? 0 }
+
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: card.icon)
+                            .font(.body)
+                            .foregroundStyle(.white)
+                            .frame(width: 32, height: 32)
+                            .background(Color(hex: card.colorHex), in: RoundedRectangle(cornerRadius: 8))
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(card.name)
+                                .font(.subheadline.weight(.medium))
+                            if settled {
+                                Label("Paid — statement cleared", systemImage: "checkmark.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.income)
+                            } else if let due, let days = daysUntil {
+                                Text(partial
+                                     ? "Part-paid · \(dueText(due: due, days: days))"
+                                     : dueText(due: due, days: days))
+                                    .font(.caption)
+                                    .foregroundStyle(days <= 3 ? AppTheme.warning : .secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        VStack(alignment: .trailing, spacing: 2) {
+                            if settled {
+                                Text(CurrencyFormatter.shared.format(0, currency: card.currency))
+                                    .font(.subheadline.bold().monospacedDigit())
+                                    .foregroundStyle(AppTheme.income)
+                                Text("nothing due")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            } else {
+                                Text(CurrencyFormatter.shared.format(card.statementRemaining, currency: card.currency))
+                                    .font(.subheadline.bold().monospacedDigit())
+                                    .foregroundStyle(card.statementRemaining > 0 ? AppTheme.expense : .secondary)
+                                Text(partial ? "still owed" : "statement balance")
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+
+                    let unbilled = card.unbilledBalance
+                    if unbilled > 0 {
+                        HStack {
+                            Text("Unbilled since statement")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                            Spacer()
+                            Text(CurrencyFormatter.shared.format(unbilled, currency: card.currency))
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    let minInterest = card.estimatedCreditInterest(ifPaying: card.estimatedMinimumPayment)
+                    if !settled, minInterest >= 1 {
+                        HStack(spacing: 4) {
+                            Image(systemName: "info.circle")
+                            Text("Pay in full — minimum payment would cost ~\(CurrencyFormatter.shared.format(minInterest, currency: card.currency)) interest")
+                            Spacer()
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(AppTheme.warning)
+                    }
+                }
+
+                if card.id != creditCardsWithCycle.last?.id {
+                    Divider().overlay(AppTheme.divider(for: scheme))
+                }
+            }
+        }
+        .premiumCard()
+    }
+
+    private func dueText(due: Date, days: Int) -> String {
+        let df = DateFormatter()
+        df.dateFormat = "d MMM"
+        let dateStr = df.string(from: due)
+        if days < 0 {
+            return "Was due \(dateStr)"
+        } else if days == 0 {
+            return "Due today (\(dateStr))"
+        } else if days == 1 {
+            return "Due tomorrow (\(dateStr))"
+        } else {
+            return "Due in \(days) days (\(dateStr))"
+        }
     }
 
     // MARK: - Financial Health Card
@@ -562,6 +777,8 @@ struct SummaryCard: View {
                 }
                 Text(CurrencyFormatter.shared.format(amount))
                     .font(.title.bold().monospacedDigit())
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
             }
             Spacer()
             if let pct = changePercent {

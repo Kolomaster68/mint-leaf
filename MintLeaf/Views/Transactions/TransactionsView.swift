@@ -132,16 +132,14 @@ struct TransactionsView: View {
                                 }
                                 Divider()
                                 Button(role: .destructive) {
-                                    account.adjustBalance(by: -transaction.amount)
-                                    context.delete(transaction)
+                                    TransferService.delete(transaction, context: context)
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }
                             }
                             .swipeActions(edge: .trailing) {
                                 Button(role: .destructive) {
-                                    account.adjustBalance(by: -transaction.amount)
-                                    context.delete(transaction)
+                                    TransferService.delete(transaction, context: context)
                                 } label: {
                                     Label("Delete", systemImage: "trash")
                                 }

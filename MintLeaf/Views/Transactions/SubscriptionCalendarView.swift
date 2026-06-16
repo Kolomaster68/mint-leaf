@@ -167,7 +167,9 @@ struct SubscriptionCalendarView: View {
             }
         }
         .navigationTitle("Subscriptions")
+        #if os(macOS)
         .onExitCommand { dismissDrawer() }
+        #endif
         .sheet(item: $editingItem) { item in
             NewScheduledSheet(editing: item)
         }

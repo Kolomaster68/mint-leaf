@@ -117,8 +117,7 @@ struct EditTransactionSheet: View {
                     Section {
                         Button("Delete Transaction", role: .destructive) {
                             if let transaction {
-                                account.adjustBalance(by: -transaction.amount)
-                                context.delete(transaction)
+                                TransferService.delete(transaction, context: context)
                             }
                             dismiss()
                         }
@@ -166,17 +165,59 @@ struct EditTransactionSheet: View {
 
         let tagsToApply = allTags.filter { selectedTags.contains($0.id) }
 
+        // A transfer to the same account makes no sense — treat it as a normal transaction.
+        let newDest: Account? = (isTransfer && transferAccount?.id != account.id) ? transferAccount : nil
+
         if let t = transaction {
             let oldAmount = t.amount
+            let oldMirror = TransferService.findMirror(of: t)
+            let oldDest = t.transferDestination
+
             t.title = title
             t.amount = signedAmount
             t.date = date
             t.notes = notes
             t.location = location.isEmpty ? nil : location
             t.category = selectedCategory
-            t.transferDestination = isTransfer ? transferAccount : nil
             t.tags = tagsToApply
+            t.transferDestination = newDest
             account.adjustBalance(by: signedAmount - oldAmount)
+
+            if let newDest {
+                let pairID = t.transferPairID ?? UUID()
+                t.transferPairID = pairID
+                let mirrorNote = "Transfer \(isExpense ? "to" : "from") \(account.name)"
+
+                if let oldMirror, oldDest?.id == newDest.id {
+                    // Same destination — update the existing mirror in place.
+                    let oldMirrorAmount = oldMirror.amount
+                    oldMirror.transferPairID = pairID
+                    oldMirror.amount = -signedAmount
+                    oldMirror.title = title
+                    oldMirror.date = date
+                    oldMirror.notes = mirrorNote
+                    newDest.adjustBalance(by: -signedAmount - oldMirrorAmount)
+                } else {
+                    // Destination changed (or there was no mirror) — remove the old, add a fresh one.
+                    if let oldMirror, let acc = oldMirror.account {
+                        acc.adjustBalance(by: -oldMirror.amount)
+                        context.delete(oldMirror)
+                    }
+                    let mirror = Transaction(amount: -signedAmount, title: title, date: date,
+                                             notes: mirrorNote, category: selectedCategory, account: newDest)
+                    mirror.transferDestination = account
+                    mirror.transferPairID = pairID
+                    context.insert(mirror)
+                    newDest.adjustBalance(by: -signedAmount)
+                }
+            } else {
+                // No longer a transfer — remove any existing mirror and reverse its effect.
+                if let oldMirror, let acc = oldMirror.account {
+                    acc.adjustBalance(by: -oldMirror.amount)
+                    context.delete(oldMirror)
+                }
+                t.transferPairID = nil
+            }
         } else {
             let t = Transaction(
                 amount: signedAmount,
@@ -187,12 +228,14 @@ struct EditTransactionSheet: View {
                 account: account
             )
             t.location = location.isEmpty ? nil : location
-            t.transferDestination = isTransfer ? transferAccount : nil
+            t.transferDestination = newDest
             t.tags = tagsToApply
             context.insert(t)
             account.adjustBalance(by: signedAmount)
 
-            if isTransfer, let dest = transferAccount {
+            if let dest = newDest {
+                let pairID = UUID()
+                t.transferPairID = pairID
                 let mirror = Transaction(
                     amount: -signedAmount,
                     title: title,
@@ -202,6 +245,7 @@ struct EditTransactionSheet: View {
                     account: dest
                 )
                 mirror.transferDestination = account
+                mirror.transferPairID = pairID
                 context.insert(mirror)
                 dest.adjustBalance(by: -signedAmount)
             }

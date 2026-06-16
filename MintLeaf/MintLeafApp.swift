@@ -99,7 +99,6 @@ struct MintLeafApp: App {
         .modelContainer(container)
         .commands { AppCommands() }
         #if os(macOS)
-
         Settings {
             SettingsView()
                 .preferredColorScheme(selectedAppearance.colorScheme)

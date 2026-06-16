@@ -54,6 +54,7 @@ final class XLSXImporter {
     // MARK: - ZIP extraction using /usr/bin/ditto
 
     private static func unzip(_ source: URL, to destination: URL) throws {
+        #if os(macOS)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/ditto")
         process.arguments = ["-xk", source.path, destination.path]
@@ -67,6 +68,10 @@ final class XLSXImporter {
         guard process.terminationStatus == 0 else {
             throw XLSXError.unzipFailed
         }
+        #else
+        // No subprocess/zip facility on iOS — Excel import is macOS-only.
+        throw XLSXError.unsupportedOnPlatform
+        #endif
     }
 
     // MARK: - XML parsing
@@ -252,12 +257,14 @@ enum XLSXError: LocalizedError {
     case unzipFailed
     case noSheets
     case invalidFormat
+    case unsupportedOnPlatform
 
     var errorDescription: String? {
         switch self {
         case .unzipFailed: return "Could not open the Excel file."
         case .noSheets: return "No sheets with data found in the workbook."
         case .invalidFormat: return "The file is not a valid .xlsx spreadsheet."
+        case .unsupportedOnPlatform: return "Excel import is only available on macOS. Try CSV or a bank file instead."
         }
     }
 }

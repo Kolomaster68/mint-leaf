@@ -249,6 +249,10 @@ struct SettingsView: View {
                     get: { manager.showSubscriptions },
                     set: { manager.showSubscriptions = $0 }
                 ))
+                Toggle("Credit Card Payments", isOn: Binding(
+                    get: { manager.showCreditCard },
+                    set: { manager.showCreditCard = $0 }
+                ))
             }
 
             Section("Thresholds") {
@@ -604,7 +608,9 @@ struct SettingsView: View {
                     Button("Replay") {
                         appearance = pendingAppearance
                         try? context.save()
+                        #if os(macOS)
                         NSApp.keyWindow?.close()
+                        #endif
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                             TutorialEngine.shared.start(flow)
                         }
@@ -1113,6 +1119,23 @@ struct CSVDocument: FileDocument {
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         FileWrapper(regularFileWithContents: content.data(using: .utf8) ?? Data())
+    }
+}
+
+struct BackupDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+    var data: Data
+
+    init(data: Data) {
+        self.data = data
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        data = configuration.file.regularFileContents ?? Data()
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        FileWrapper(regularFileWithContents: data)
     }
 }
 

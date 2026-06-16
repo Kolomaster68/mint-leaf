@@ -20,6 +20,15 @@ struct ImportExportView: View {
     @State private var exportScope: ExportScope = .all
     @State private var exportAccountID: PersistentIdentifier?
 
+    // Backup & restore
+    @State private var showingBackupExporter = false
+    @State private var showingBackupImporter = false
+    @State private var backupData = Data()
+    @State private var showingRestoreConfirm = false
+    @State private var pendingRestoreData: Data?
+    @State private var backupStatus: String?
+    @State private var backupError: String?
+
     enum ImportType: Identifiable {
         case csv, pdf, excel, bankFile
         var id: String {
@@ -44,10 +53,32 @@ struct ImportExportView: View {
                 Divider()
                     .padding(.horizontal)
                 exportSection
+                Divider()
+                    .padding(.horizontal)
+                backupSection
             }
             .padding(.vertical, 24)
         }
         .navigationTitle("Import / Export")
+        .fileExporter(
+            isPresented: $showingBackupExporter,
+            document: BackupDocument(data: backupData),
+            contentType: .json,
+            defaultFilename: "MintLeaf-Backup-\(exportDateString)"
+        ) { _ in }
+        .fileImporter(
+            isPresented: $showingBackupImporter,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            handleBackupFile(result)
+        }
+        .alert("Restore from backup?", isPresented: $showingRestoreConfirm) {
+            Button("Cancel", role: .cancel) { pendingRestoreData = nil }
+            Button("Replace All Data", role: .destructive) { performRestore() }
+        } message: {
+            Text("This will permanently replace ALL current data — accounts, transactions, budgets, goals, rules and tags — with the contents of the backup file. This cannot be undone.")
+        }
         .sheet(item: $importType) { type in
             if let account = selectedAccountForImport {
                 switch type {
@@ -287,6 +318,107 @@ struct ImportExportView: View {
             )
             .padding(.horizontal)
         }
+    }
+
+    // MARK: - Backup & Restore Section
+
+    private var backupSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Backup & Restore", systemImage: "externaldrive.badge.timemachine")
+                .font(.title3.bold())
+                .padding(.horizontal)
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "info.circle")
+                        .foregroundStyle(AppTheme.accent(for: scheme))
+                    Text("A full snapshot of everything — accounts, transactions, subscriptions, bills, goals, budgets, rules and tags — in a single file. Save one before updating the app, then restore it in one tap.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack(spacing: 12) {
+                    Button {
+                        createBackup()
+                    } label: {
+                        Label("Create Backup", systemImage: "arrow.down.doc")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(AppTheme.accent(for: scheme))
+
+                    Button {
+                        showingBackupImporter = true
+                    } label: {
+                        Label("Restore Backup", systemImage: "arrow.up.doc")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                if let backupStatus {
+                    Label(backupStatus, systemImage: "checkmark.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.income)
+                }
+                if let backupError {
+                    Label(backupError, systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+            .padding()
+            .background(Color.secondary.opacity(0.04), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.secondary.opacity(0.1), lineWidth: 1)
+            )
+            .padding(.horizontal)
+        }
+    }
+
+    private func createBackup() {
+        backupError = nil
+        backupStatus = nil
+        do {
+            backupData = try BackupManager.export(context: context)
+            showingBackupExporter = true
+        } catch {
+            backupError = "Couldn't create backup: \(error.localizedDescription)"
+        }
+    }
+
+    private func handleBackupFile(_ result: Result<[URL], Error>) {
+        backupError = nil
+        backupStatus = nil
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else { return }
+            guard url.startAccessingSecurityScopedResource() else {
+                backupError = "Cannot access the selected file."
+                return
+            }
+            defer { url.stopAccessingSecurityScopedResource() }
+            do {
+                pendingRestoreData = try Data(contentsOf: url)
+                showingRestoreConfirm = true
+            } catch {
+                backupError = "Couldn't read file: \(error.localizedDescription)"
+            }
+        case .failure(let err):
+            backupError = err.localizedDescription
+        }
+    }
+
+    private func performRestore() {
+        guard let data = pendingRestoreData else { return }
+        do {
+            let summary = try BackupManager.restore(from: data, context: context)
+            backupStatus = "Restored \(summary.accounts) accounts, \(summary.transactions) transactions, \(summary.scheduled) scheduled, \(summary.goals) goals, \(summary.tags) tags."
+        } catch {
+            backupError = "Restore failed: \(error.localizedDescription)"
+        }
+        pendingRestoreData = nil
     }
 
     // MARK: - Helpers

@@ -181,6 +181,7 @@ struct TagsView: View {
             .tint(AppTheme.accent(for: scheme))
         }
         .padding(40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

@@ -27,6 +27,7 @@ struct AppNotification: Identifiable {
         case budgets
         case balances
         case subscriptions
+        case creditCard
     }
 }
 
@@ -54,6 +55,10 @@ final class NotificationManager {
     var showSubscriptions: Bool {
         get { UserDefaults.standard.object(forKey: "notifShowSubscriptions") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "notifShowSubscriptions") }
+    }
+    var showCreditCard: Bool {
+        get { UserDefaults.standard.object(forKey: "notifShowCreditCard") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "notifShowCreditCard") }
     }
     var lowBalanceThreshold: Decimal {
         get { Decimal(UserDefaults.standard.object(forKey: "notifLowBalanceThreshold") as? Double ?? 100) }
@@ -151,15 +156,35 @@ final class NotificationManager {
         if showBalances {
             for account in accounts where !account.isArchived {
                 if account.type != .creditCard {
-                    if account.currentBalance < 0 {
+                    if account.isOverArrangedLimit && account.hasOverdraft {
+                        // Past the arranged overdraft → highest priority, name the fee.
+                        var msg = "Balance \(CurrencyFormatter.shared.format(account.currentBalance, currency: account.currency)) is past your \(CurrencyFormatter.shared.format(account.overdraftLimit ?? 0, currency: account.currency)) overdraft."
+                        if let fee = account.unarrangedOverdraftFee, fee > 0 {
+                            msg += " May incur a \(CurrencyFormatter.shared.format(fee, currency: account.currency)) fee."
+                        }
+                        items.append(AppNotification(
+                            stableKey: "over-limit-\(account.name)",
+                            icon: "exclamationmark.octagon.fill",
+                            iconColor: .red,
+                            title: "\(account.name) over overdraft limit",
+                            message: msg,
+                            date: nil,
+                            priority: .high,
+                            category: .balances
+                        ))
+                    } else if account.currentBalance < 0 {
+                        var msg = "Balance: \(CurrencyFormatter.shared.format(account.currentBalance, currency: account.currency))"
+                        if account.hasOverdraft, account.estimatedMonthlyOverdraftInterest >= 1 {
+                            msg += " — using your overdraft, about \(CurrencyFormatter.shared.format(account.estimatedMonthlyOverdraftInterest, currency: account.currency)) interest this month."
+                        }
                         items.append(AppNotification(
                             stableKey: "negative-\(account.name)",
                             icon: "exclamationmark.triangle.fill",
                             iconColor: .red,
-                            title: "\(account.name) is negative",
-                            message: "Balance: \(CurrencyFormatter.shared.format(account.currentBalance, currency: account.currency))",
+                            title: account.hasOverdraft ? "\(account.name) is in its overdraft" : "\(account.name) is negative",
+                            message: msg,
                             date: nil,
-                            priority: .high,
+                            priority: account.hasOverdraft ? .medium : .high,
                             category: .balances
                         ))
                     } else if account.currentBalance < lowBalanceThreshold && account.type != .loan {
@@ -188,6 +213,20 @@ final class NotificationManager {
                         ))
                     }
                 }
+            }
+        }
+
+        // Credit card statement & payment lifecycle
+        if showCreditCard {
+            let accountsByID = Dictionary(uniqueKeysWithValues: accounts.map { ($0.id, $0) })
+            for card in accounts where !card.isArchived && card.hasBillingCycle {
+                items.append(contentsOf: creditCardNotifications(
+                    card: card,
+                    accountsByID: accountsByID,
+                    scheduled: scheduled,
+                    today: today,
+                    calendar: calendar
+                ))
             }
         }
 
@@ -290,6 +329,140 @@ final class NotificationManager {
         }
     }
 
+    // MARK: - Credit Card Payment Lifecycle
+    private func creditCardNotifications(
+        card: Account,
+        accountsByID: [UUID: Account],
+        scheduled: [ScheduledTransaction],
+        today: Date,
+        calendar: Calendar
+    ) -> [AppNotification] {
+        var result: [AppNotification] = []
+
+        let statementBalance = card.statementBalance
+        guard statementBalance > 0 else { return result } // nothing owed → nothing to chase
+        guard let dueDate = card.nextPaymentDueDate() else { return result }
+
+        let cycleKey0 = Self.cycleKey(for: dueDate)
+
+        // Auto-reconcile: if payments since the statement closed cover it, the
+        // payment was made — confirm it and skip all the due/overdue chasing.
+        if card.statementSettled {
+            result.append(AppNotification(
+                stableKey: "cc-paid-\(card.id)-\(cycleKey0)",
+                icon: "checkmark.circle.fill",
+                iconColor: .green,
+                title: "\(card.name) payment received",
+                message: "Your \(CurrencyFormatter.shared.format(card.paymentsSinceStatement, currency: card.currency)) payment cleared this statement.",
+                date: nil,
+                priority: .low,
+                category: .creditCard
+            ))
+            return result
+        }
+
+        let startToday = calendar.startOfDay(for: today)
+        let startDue = calendar.startOfDay(for: dueDate)
+        let daysUntil = calendar.dateComponents([.day], from: startToday, to: startDue).day ?? 0
+        // Chase the amount that's actually still outstanding (handles partial payments).
+        let outstanding = card.statementRemaining
+        let amountStr = CurrencyFormatter.shared.format(outstanding, currency: card.currency)
+        let dueStr = Self.shortDateString(dueDate)
+
+        // Statement / due reminders. One notification per state, keyed per cycle so it auto-resolves.
+        let cycleKey = cycleKey0
+        if daysUntil < 0 {
+            result.append(AppNotification(
+                stableKey: "cc-overdue-\(card.id)-\(cycleKey)",
+                icon: "exclamationmark.octagon.fill",
+                iconColor: .red,
+                title: "\(card.name) payment overdue",
+                message: "\(amountStr) was due \(dueStr) — late fees may apply",
+                date: dueDate,
+                priority: .high,
+                category: .creditCard
+            ))
+        } else if daysUntil == 0 {
+            result.append(AppNotification(
+                stableKey: "cc-due-today-\(card.id)-\(cycleKey)",
+                icon: "creditcard.fill",
+                iconColor: .red,
+                title: "\(card.name) payment due today",
+                message: "\(amountStr) due today",
+                date: dueDate,
+                priority: .high,
+                category: .creditCard
+            ))
+        } else if daysUntil <= 5 {
+            result.append(AppNotification(
+                stableKey: "cc-due-soon-\(card.id)-\(cycleKey)",
+                icon: "creditcard",
+                iconColor: .orange,
+                title: "\(card.name) payment due soon",
+                message: "\(amountStr) due in \(daysUntil) day\(daysUntil == 1 ? "" : "s") (\(dueStr))",
+                date: dueDate,
+                priority: .medium,
+                category: .creditCard
+            ))
+        }
+
+        // Insufficient-funds warning: only worth raising within ~10 days of the due date.
+        if daysUntil >= 0 && daysUntil <= 10,
+           let sourceID = card.paymentSourceAccountID,
+           let source = accountsByID[sourceID] {
+            let projected = source.projectedBalance(on: dueDate, scheduled: scheduled)
+            let afterPayment = projected - outstanding
+            if afterPayment < source.balanceFloor {
+                let shortfall = source.balanceFloor - afterPayment
+                let projectedStr = CurrencyFormatter.shared.format(projected, currency: source.currency)
+                let shortfallStr = CurrencyFormatter.shared.format(abs(shortfall), currency: source.currency)
+                var feeNote = "Top up to avoid fees."
+                if let fee = source.unarrangedOverdraftFee, fee > 0 {
+                    feeNote = "Likely a \(CurrencyFormatter.shared.format(fee, currency: source.currency)) unarranged overdraft fee — top up to avoid it."
+                }
+                result.append(AppNotification(
+                    stableKey: "cc-funds-\(card.id)-\(cycleKey)",
+                    icon: "exclamationmark.triangle.fill",
+                    iconColor: .red,
+                    title: "\(source.name) may not cover \(card.name)",
+                    message: "\(amountStr) due \(dueStr). Projected balance then: \(projectedStr) — short by \(shortfallStr). \(feeNote)",
+                    date: dueDate,
+                    priority: .high,
+                    category: .creditCard
+                ))
+            }
+        }
+
+        // Interest nudge: if the card charges interest and isn't going to be cleared, suggest paying in full.
+        if let apr = card.purchaseAPR, apr > 0 {
+            let interest = card.estimatedCreditInterest(ifPaying: card.estimatedMinimumPayment)
+            if interest >= 1 {
+                let interestStr = CurrencyFormatter.shared.format(interest, currency: card.currency)
+                let minStr = CurrencyFormatter.shared.format(card.estimatedMinimumPayment, currency: card.currency)
+                result.append(AppNotification(
+                    stableKey: "cc-interest-\(card.id)-\(cycleKey)",
+                    icon: "percent",
+                    iconColor: .orange,
+                    title: "Pay \(card.name) in full to avoid interest",
+                    message: "Paying only the \(minStr) minimum would cost about \(interestStr) interest next cycle at \(apr)% APR.",
+                    date: nil,
+                    priority: .low,
+                    category: .creditCard
+                ))
+            }
+        }
+
+        return result
+    }
+
+    /// A stable per-cycle suffix so a notification for one statement period
+    /// auto-resolves once the cycle rolls over (different due date → different key).
+    private static func cycleKey(for dueDate: Date) -> String {
+        let f = DateFormatter()
+        f.dateFormat = "yyyyMM"
+        return f.string(from: dueDate)
+    }
+
     // MARK: - Helpers
     private func billNotification(
         _ item: ScheduledTransaction,
@@ -299,9 +472,10 @@ final class NotificationManager {
     ) -> AppNotification? {
         let cat: AppNotification.NotificationCategory = item.isSubscription ? .subscriptions : .bills
 
+        let id = item.id.uuidString
         if item.nextDate <= today {
             return AppNotification(
-                stableKey: "overdue-\(item.title)",
+                stableKey: "overdue-\(id)",
                 icon: "exclamationmark.circle.fill",
                 iconColor: .red,
                 title: "\(item.title) is overdue",
@@ -312,7 +486,7 @@ final class NotificationManager {
             )
         } else if item.nextDate <= threeDays {
             return AppNotification(
-                stableKey: "due-soon-\(item.title)",
+                stableKey: "due-soon-\(id)",
                 icon: item.isSubscription ? "arrow.triangle.2.circlepath" : "calendar.badge.clock",
                 iconColor: .orange,
                 title: "\(item.title) due soon",
@@ -323,7 +497,7 @@ final class NotificationManager {
             )
         } else if item.nextDate <= sevenDays {
             return AppNotification(
-                stableKey: "coming-up-\(item.title)",
+                stableKey: "coming-up-\(id)",
                 icon: item.isSubscription ? "arrow.triangle.2.circlepath" : "calendar",
                 iconColor: .blue,
                 title: "\(item.title) coming up",

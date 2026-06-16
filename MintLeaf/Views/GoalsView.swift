@@ -271,6 +271,7 @@ struct GoalsView: View {
             .tint(AppTheme.accent(for: scheme))
         }
         .padding(.vertical, 40)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 

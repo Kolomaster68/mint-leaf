@@ -83,6 +83,19 @@ enum RecurrenceFrequency: String, Codable, CaseIterable, Identifiable {
     case yearly = "Yearly"
 
     var id: String { rawValue }
+
+    /// Returns the next occurrence date after `date` for this frequency.
+    func advance(_ date: Date) -> Date {
+        let cal = Calendar.current
+        switch self {
+        case .daily: return cal.date(byAdding: .day, value: 1, to: date) ?? date
+        case .weekly: return cal.date(byAdding: .day, value: 7, to: date) ?? date
+        case .biweekly: return cal.date(byAdding: .day, value: 14, to: date) ?? date
+        case .monthly: return cal.date(byAdding: .month, value: 1, to: date) ?? date
+        case .quarterly: return cal.date(byAdding: .month, value: 3, to: date) ?? date
+        case .yearly: return cal.date(byAdding: .year, value: 1, to: date) ?? date
+        }
+    }
 }
 
 enum SubscriptionDetector {
