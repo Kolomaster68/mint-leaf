@@ -19,6 +19,7 @@ enum SidebarDestination: Hashable {
     case rules
     case tags
     case importExport
+    case dataHealth
 }
 
 struct ContentView: View {
@@ -33,6 +34,7 @@ struct ContentView: View {
     @State private var showingNewAccount = false
     @State private var editingAccount: Account?
     @State private var accountToDelete: Account?
+    @State private var showingReorderAccounts = false
     @AppStorage("biometricLockEnabled") private var biometricEnabled = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("sidebarAccountsCollapsed") private var accountsCollapsed = false
@@ -88,6 +90,9 @@ struct ContentView: View {
         }
         .onAppear {
             seedIfNeeded()
+            if !MintLeafApp.isDevMode {
+                BackupManager.performAutomaticBackup(context: context)
+            }
             ScheduledTransactionProcessor.processOverdue(context: context)
             if shouldStartTutorial {
                 shouldStartTutorial = false
@@ -160,11 +165,12 @@ struct ContentView: View {
                                 .foregroundStyle(.white)
                                 .frame(minWidth: 14, minHeight: 14)
                                 .background(.red, in: Circle())
-                                .offset(x: 4, y: -4)
+                                .offset(x: 2, y: -2)
                         }
                     }
                 }
                 .buttonStyle(.plain)
+                .padding(.trailing, 10)
             }
             .listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
@@ -216,12 +222,22 @@ struct ContentView: View {
                         }
                         .buttonStyle(.plain)
                         Spacer()
+                        if accounts.filter({ !$0.isArchived }).count > 1 {
+                            Button(action: { showingReorderAccounts = true }) {
+                                Image(systemName: "arrow.up.arrow.down")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .buttonStyle(.plain)
+                            .help("Reorder accounts")
+                        }
                         Button(action: { showingNewAccount = true }) {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title3)
                                 .foregroundStyle(AppTheme.accent(for: scheme))
                         }
                     .buttonStyle(.plain)
+                    .padding(.trailing, 10)
                 }
                     Text(CurrencyFormatter.shared.format(accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.currentBalance }))
                         .font(.caption.monospacedDigit())
@@ -319,6 +335,7 @@ struct ContentView: View {
                     sidebarRow("Rules", icon: "wand.and.rays", destination: .rules)
                     sidebarRow("Tags", icon: "tag", destination: .tags)
                     sidebarRow("Import / Export", icon: "square.and.arrow.up.on.square", destination: .importExport)
+                    sidebarRow("Data Health", icon: "checkmark.shield", destination: .dataHealth)
                 }
             } header: {
                 Button {
@@ -363,20 +380,26 @@ struct ContentView: View {
             .listRowBackground(Color.clear)
 
         }
+        // Sidebar is a distinctly lighter panel than the true-black content,
+        // so it reads as its own region (tonal contrast, no window transparency).
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 6) {
-                Image(systemName: "leaf.fill")
-                    .font(.system(size: 28))
-                    .foregroundStyle(AppTheme.accent(for: scheme).opacity(0.12))
-                Text("Mint Leaf")
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(.quaternary)
+            VStack(spacing: 0) {
+                Divider()
+                    .overlay(AppTheme.divider(for: scheme).opacity(0.5))
+                HStack(spacing: 6) {
+                    Image(systemName: "leaf.fill")
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.accent(for: scheme).opacity(0.5))
+                    Text("Mint Leaf")
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(AppTheme.sidebarBackground(for: scheme))
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
-            .background(AppTheme.sidebarBackground(for: scheme))
         }
         .background(AppTheme.sidebarBackground(for: scheme))
         .toolbar {}
@@ -399,6 +422,9 @@ struct ContentView: View {
         }
         .sheet(item: $editingAccount) { account in
             NewAccountSheet(account: account)
+        }
+        .sheet(isPresented: $showingReorderAccounts) {
+            AccountReorderSheet()
         }
         .alert("Delete Account?", isPresented: .init(
             get: { accountToDelete != nil },
@@ -543,7 +569,7 @@ struct ContentView: View {
     private var detail: some View {
         switch selection {
         case .overview, .none:
-            DashboardView()
+            DashboardView(onReviewDataHealth: { selection = .dataHealth })
         case .search:
             SearchView()
         case .account(let account):
@@ -576,6 +602,8 @@ struct ContentView: View {
             TagsView()
         case .importExport:
             ImportExportView()
+        case .dataHealth:
+            DataIntegrityView()
         }
     }
     #endif

@@ -403,9 +403,6 @@ final class PDFStatementParser {
         let inlineAmountPattern = #"(\d{1,3}(?:,\d{3})*\.\d{2})\s*(CR)?\s*$"#
         let inlineRegex = try? NSRegularExpression(pattern: inlineAmountPattern, options: .caseInsensitive)
 
-        // Determine the last entry's text end location to separate inline vs block amounts
-        let lastEntryEnd = pairs.last.map { $0.descStart + 200 } ?? 0 // approximate
-
         // Separate amounts into inline (within entry text region) and block (after all entries)
         // Block amounts are clustered together with small gaps between them
         var blockAmounts: [(value: Decimal, isCredit: Bool)] = []

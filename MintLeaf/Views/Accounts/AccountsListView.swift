@@ -15,6 +15,20 @@ struct AccountsListView: View {
         activeAccounts.reduce(Decimal.zero) { $0 + $1.currentBalance }
     }
 
+    private func moveAccounts(from source: IndexSet, to destination: Int) {
+        var reordered = activeAccounts
+        reordered.move(fromOffsets: source, toOffset: destination)
+        // Reassign sortOrder so the new order persists. Archived accounts keep
+        // higher numbers so they never interleave with active ones.
+        for (index, account) in reordered.enumerated() {
+            account.sortOrder = index
+        }
+        for (offset, account) in archivedAccounts.enumerated() {
+            account.sortOrder = reordered.count + offset
+        }
+        try? context.save()
+    }
+
     var body: some View {
         List {
             Section {
@@ -29,7 +43,7 @@ struct AccountsListView: View {
                 .padding(.vertical, 12)
             }
 
-            Section("Active Accounts") {
+            Section {
                 ForEach(activeAccounts) { account in
                     NavigationLink {
                         TransactionsView(account: account)
@@ -54,6 +68,13 @@ struct AccountsListView: View {
                             Label("Delete", systemImage: "trash")
                         }
                     }
+                }
+                .onMove(perform: moveAccounts)
+            } header: {
+                Text("Active Accounts")
+            } footer: {
+                if activeAccounts.count > 1 {
+                    Text("Drag to reorder your accounts.")
                 }
             }
 
@@ -82,6 +103,13 @@ struct AccountsListView: View {
         .premiumList()
         .navigationTitle("Accounts")
         .toolbar {
+            #if os(iOS)
+            ToolbarItem(placement: .topBarLeading) {
+                if activeAccounts.count > 1 {
+                    EditButton()
+                }
+            }
+            #endif
             ToolbarItem(placement: .primaryAction) {
                 Button(action: { showingNewAccount = true }) {
                     Image(systemName: "plus")
@@ -102,28 +130,66 @@ struct AccountRow: View {
     let account: Account
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: account.type.icon)
-                .font(.title3)
-                .foregroundStyle(Color(hex: account.colorHex))
-                .frame(width: 32, height: 32)
-                .background(Color(hex: account.colorHex).opacity(0.15))
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                Image(systemName: account.type.icon)
+                    .font(.title3)
+                    .foregroundStyle(Color(hex: account.colorHex))
+                    .frame(width: 32, height: 32)
+                    .background(Color(hex: account.colorHex).opacity(0.15))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            VStack(alignment: .leading) {
-                Text(account.name)
-                    .font(.body)
-                Text(account.type.rawValue)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading) {
+                    Text(account.name)
+                        .font(.body)
+                    Text(account.type.rawValue)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(CurrencyFormatter.shared.format(account.currentBalance, currency: account.currency))
+                    .font(.body.monospacedDigit())
+                    .foregroundStyle(account.currentBalance >= 0 ? AppTheme.accent(for: scheme) : Color.red)
             }
 
-            Spacer()
-
-            Text(CurrencyFormatter.shared.format(account.currentBalance, currency: account.currency))
-                .font(.body.monospacedDigit())
-                .foregroundStyle(account.currentBalance >= 0 ? AppTheme.accent(for: scheme) : Color.red)
+            if account.hasOverdraft && account.isOverdrawn {
+                overdraftBar
+            }
         }
         .padding(.vertical, 4)
+    }
+
+    private var overdraftBar: some View {
+        let overLimit = account.isOverArrangedLimit
+        let usageColor: Color = overLimit ? AppTheme.expense
+            : account.overdraftUsageFraction > 0.8 ? AppTheme.warning
+            : AppTheme.accent(for: scheme)
+
+        return VStack(spacing: 4) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.secondary.opacity(0.15))
+                    Capsule()
+                        .fill(usageColor)
+                        .frame(width: geo.size.width * min(1, account.overdraftUsageFraction))
+                }
+            }
+            .frame(height: 5)
+
+            HStack {
+                Text(overLimit
+                     ? "Over your \(CurrencyFormatter.shared.format(account.overdraftLimit ?? 0, currency: account.currency)) overdraft"
+                     : "Using \(CurrencyFormatter.shared.format(account.overdraftUsed, currency: account.currency)) of \(CurrencyFormatter.shared.format(account.overdraftLimit ?? 0, currency: account.currency)) overdraft")
+                    .foregroundStyle(overLimit ? AppTheme.expense : .secondary)
+                Spacer()
+                Text("\(CurrencyFormatter.shared.format(account.availableToSpend, currency: account.currency)) available")
+                    .foregroundStyle(.secondary)
+            }
+            .font(.caption2)
+        }
+        .padding(.leading, 44)
     }
 }

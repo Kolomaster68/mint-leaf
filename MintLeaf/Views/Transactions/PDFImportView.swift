@@ -109,7 +109,9 @@ struct PDFImportView: View {
                     Spacer()
                     if let opening = statement.openingBalance, account.transactions.isEmpty {
                         Toggle("Set as account opening balance", isOn: $setOpeningBalance)
+                            #if os(macOS)
                             .toggleStyle(.checkbox)
+                            #endif
                             .font(.caption)
                             .onAppear { detectedOpeningBalance = opening; setOpeningBalance = true }
                     }
@@ -167,7 +169,9 @@ struct PDFImportView: View {
                 }
                 Spacer()
                 Toggle("Detect duplicates", isOn: $detectDuplicates)
+                    #if os(macOS)
                     .toggleStyle(.checkbox)
+                    #endif
             }
             .padding(.horizontal)
         }

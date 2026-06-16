@@ -31,14 +31,14 @@ struct AppTheme {
     static let darkSurface = Color(red: 0.09, green: 0.09, blue: 0.095)
     static let darkCard = Color(red: 0.12, green: 0.12, blue: 0.125)
     static let darkCardElevated = Color(red: 0.15, green: 0.15, blue: 0.155)
-    static let darkSidebar = Color(red: 0.065, green: 0.065, blue: 0.07)
+    static let darkSidebar = Color(red: 0.105, green: 0.105, blue: 0.115)
     static let darkDivider = Color(red: 0.20, green: 0.20, blue: 0.21)
 
     // MARK: - Light mode surfaces
     static let lightSurface = Color(red: 0.955, green: 0.955, blue: 0.965)
     static let lightCard = Color.white
     static let lightCardElevated = Color(red: 0.99, green: 0.99, blue: 1.0)
-    static let lightSidebar = Color(red: 0.935, green: 0.935, blue: 0.945)
+    static let lightSidebar = Color(red: 0.915, green: 0.915, blue: 0.928)
     static let lightDivider = Color(red: 0.85, green: 0.85, blue: 0.87)
 
     // MARK: - Semantic colours

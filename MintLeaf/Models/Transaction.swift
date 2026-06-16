@@ -11,6 +11,8 @@ final class Transaction {
     var isReconciled: Bool
     var checkNumber: String?
     var location: String?
+    /// Shared id linking the two sides of a transfer so they can be edited or deleted together.
+    var transferPairID: UUID?
 
     var account: Account?
 
