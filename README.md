@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-3.0.0-gold" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.0.0-gold" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20iOS-blue" alt="Platform">
   <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift">
   <img src="https://img.shields.io/badge/swiftui-5.0-purple" alt="SwiftUI">
@@ -39,36 +39,45 @@
   <img src="screenshots/tutorial-overview-dark.png" width="800" alt="Mint Leaf Dashboard">
 </p>
 
-## What's New in v3.0
+## What's New in v4.0
 
-v3.0 is the biggest update to Mint Leaf yet, adding five major features and a suite of quality-of-life improvements.
+v4.0 is a major release focused on **credit cards, account safety, and trust**.
 
-### New Features
+### Credit Card Statement Cycles
 
-- **Net Worth Tracker** — See your total net worth over time with an interactive chart, asset/liability breakdown, and per-account detail
-- **Reports** — Monthly and yearly financial reports with income/expense summaries, category pie charts, top merchant tables, and CSV export
-- **Goals & Wishlist** — Set savings goals with progress tracking, target dates, and daily savings calculations. Wishlist mode lets you track items you want to buy with links and purchase status
-- **Forecast** — Balance projections for 30/60/90 days or 6 months based on scheduled transactions, with what-if scenarios and runway calculations
-- **Tags** — Label transactions across categories with colour-coded tags. Tag from the transaction editor, view tagged transactions in the Tags panel, and filter spending by tag
+- Track each card's **statement day** and **payment due date** — a number of days after the statement, or a fixed day of the month, picked from a calendar grid
+- A dashboard **Credit Card Payments** card shows the statement balance, what's still owed, and a live countdown — and floats to the top with an attention border when a payment is near
+- **Reminders** as the due date approaches, when it's due, and if it's overdue
+- **Auto-reconcile** — when the payment lands, the statement is marked paid and the reminders clear themselves
 
-### Improvements
+### Overdrafts & Fee Estimates
 
-- **Transfer Fix** — Transfers between accounts no longer inflate income and expense totals
-- **XLSX Import Fix** — Files with title rows before column headers now import correctly
-- **Balance Chart Fix** — Resolved looping artifacts and inverted area shading on the balance trend chart
-- **Swipe-to-Dismiss Notifications** — Dismiss alerts with a swipe; restore them anytime from the toolbar
-- **Persistent Notification State** — Dismissed notifications stay dismissed across app restarts
-- **Tag Picker in Transaction Editor** — Add or remove tags when creating or editing any transaction
-- **Streamlined Trends** — Category breakdown moved to Reports to reduce redundancy
+- Overdraft **usage bar** and true **available-to-spend** on current accounts
+- Configure your **arranged limit, EAR, unarranged fee**, and a card's **purchase APR**
+- Plain-English **fee estimates before they hit** — insufficient-funds warnings and "pay in full to avoid interest" nudges. Estimates only; nothing is ever posted as a transaction
+
+### Backups & Data Health
+
+- **Automatic daily backups**, keeping the 10 most recent, plus full **backup/restore** to a portable JSON file (accounts, transactions, subscriptions, bills, budgets, goals, rules and tags — relationships preserved)
+- A new **Data Health** screen reconciles every balance, finds **duplicate** and **orphaned** transactions, and offers **one-tap fixes** — surfaced as a banner on the Overview if a balance ever drifts
+
+### Also New Since v3.0
+
+- **Bank File Import** — OFX, QFX, and QIF files from most banks, with preview, duplicate detection, and auto-categorisation
+- **Financial Health** dashboard card with a savings-rate, debt-ratio, and overall score
+- **Location tagging** on transactions, **dashboard customisation** (reorder and hide cards), **account reordering**, and expanded **keyboard shortcuts** with an in-app reference
+- Correct currency conversion for foreign-currency subscriptions, and transfer editing/deletion that keeps both sides in sync
 
 ## Features
 
 ### Accounts & Transactions
 - **Multiple Accounts** — Track checking, savings, credit cards, and cash with live balances
+- **Credit Card Cycles** — Statement balances, payment due dates, reminders, and auto-reconcile
+- **Overdrafts & Fees** — Overdraft usage, available-to-spend, and fee/interest estimates before they hit
 - **Transaction Inbox** — Review and categorise uncategorised transactions in one place
 - **Powerful Search** — Find transactions by name, category, account, notes, or amount with filters
 - **Multi-Currency** — Support for 39 currencies with automatic formatting and per-account currency
-- **CSV, XLSX & PDF Import** — Import bank statements from CSV, Excel, or PDF documents
+- **CSV, XLSX, PDF & Bank File Import** — Import from CSV, Excel, PDF statements, or OFX/QFX/QIF bank files
 - **Reconciliation** — Mark transactions as reconciled and compare against bank statements
 
 ### Budgets & Planning
@@ -89,10 +98,15 @@ v3.0 is the biggest update to Mint Leaf yet, adding five major features and a su
 - **Rules & Automation** — Auto-categorise transactions with pattern matching and merchant aliases
 - **Notification Centre** — In-app alerts for due bills, exceeded budgets, and overdue items with swipe-to-dismiss
 
+### Safety & Trust
+- **Automatic Backups** — Daily snapshots kept locally, plus full backup/restore to a portable JSON file
+- **Data Health** — Reconcile balances, find duplicates and orphaned records, and fix issues in one tap
+
 ### Privacy & Customisation
 - **Privacy First** — All data stays on your device. No accounts, no cloud, no tracking
+- **Dashboard Customisation** — Reorder and hide cards to suit your workflow
 - **Light & Dark Mode** — Full support with custom app icons for each appearance
-- **Keyboard Shortcuts** — Full keyboard navigation for power users
+- **Keyboard Shortcuts** — Full keyboard navigation with an in-app reference
 - **Interactive Tutorial** — Guided walkthrough with sample data to learn the app
 
 ## Screenshots
@@ -175,14 +189,15 @@ New users are guided through a polished onboarding flow with three options:
 
 | Shortcut | Action |
 |----------|--------|
-| `Cmd+1` | Overview |
-| `Cmd+2` | Inbox |
-| `Cmd+3` | Trends |
-| `Cmd+4` | Budgets |
-| `Cmd+5` | Scheduled |
+| `Cmd+1`–`Cmd+9` | Jump between sections (Overview, Inbox, Trends, Budgets, Scheduled, Insights, Net Worth, Reports, Goals) |
+| `Cmd+0` | Tags |
+| `Cmd+T` | New Transaction |
 | `Cmd+F` | Search |
 | `Cmd+B` | Notifications |
 | `Shift+Cmd+N` | New Account |
+| `Shift+Cmd+E` | Export |
+
+A full, searchable reference is available in **Settings → Shortcuts**.
 
 ## App Icon
 
@@ -232,19 +247,27 @@ Mint Leaf is under active development. Here's what's been shipped and what's com
 | v3.0 | Cashflow Forecast |
 | v3.0 | Tags & Tag Picker |
 | v3.0 | Transfer Calculation Fix |
+| v3.1 | Bank File Import (OFX / QFX / QIF) |
+| v3.1 | Financial Health Card |
+| v3.1 | Location Tagging |
+| v3.1 | Dashboard Customisation |
+| v3.1 | Expanded Keyboard Shortcuts |
+| v4.0 | Credit Card Statement Cycles & Auto-Reconcile |
+| v4.0 | Overdrafts & Fee Estimates |
+| v4.0 | Automatic Backups & Backup/Restore |
+| v4.0 | Data Health & Reconciliation |
+| v4.0 | Account Reordering |
 
-### Coming in v3.x
+### Coming Next
 
 These features are actively being explored for upcoming releases:
 
 | Feature | Description |
 |---------|-------------|
-| **Dashboard Customisation** | Choose which cards appear on your dashboard and reorder them to suit your workflow |
-| **Dark/Light Theme Refinements** | Enhanced colour palettes, improved contrast, and more consistent styling across all views |
 | **Recurring Transaction Detection** | Automatically detect recurring patterns when importing bank statements and suggest scheduled transactions |
-| **Expanded Keyboard Shortcuts** | More shortcuts for common actions across all views |
-| **Shared Budgets** | Export and import budgets as JSON files to share with family or partners — no cloud account needed |
 | **Split Transactions** | Split a single transaction across multiple categories, people, or accounts for shared expenses |
+| **PDF Report Export** | Polished monthly and yearly PDF reports to save or share |
+| **On-Device AI** | Smarter statement parsing and natural-language search using Apple's on-device models, with no data leaving your device |
 
 ### Future Considerations
 
