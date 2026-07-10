@@ -7,6 +7,7 @@ struct EditTransactionSheet: View {
     @Query(sort: \Category.sortOrder) private var categories: [Category]
     @Query(sort: \Account.sortOrder) private var accounts: [Account]
     @Query(sort: \Tag.sortOrder) private var allTags: [Tag]
+    @Query(sort: \CategoryRule.sortOrder) private var rules: [CategoryRule]
 
     let account: Account
     var transaction: Transaction?
@@ -230,6 +231,14 @@ struct EditTransactionSheet: View {
             t.location = location.isEmpty ? nil : location
             t.transferDestination = newDest
             t.tags = tagsToApply
+            // Same auto-categorisation the import paths get: user rules first, then
+            // built-in keywords (e.g. "mcdonalds" → Food & Dining). Transfers excluded.
+            if t.category == nil, newDest == nil,
+               let suggestion = AutoCategorizer.categorize(transaction: t, categories: categories, rules: rules),
+               suggestion.confidence >= 0.7,
+               suggestion.category.isIncome == !isExpense {
+                t.category = suggestion.category
+            }
             context.insert(t)
             account.adjustBalance(by: signedAmount)
 

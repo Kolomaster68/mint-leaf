@@ -284,12 +284,14 @@ struct BankFileImportView: View {
         var duplicates = 0
 
         for txn in selected {
+            // Account is linked only after the duplicate check — relating an unmanaged
+            // model to a persisted one gets it implicitly saved, so skipped duplicates
+            // were quietly imported anyway.
             let transaction = Transaction(
                 amount: txn.amount,
                 title: txn.title,
                 date: txn.date,
-                notes: txn.memo,
-                account: account
+                notes: txn.memo
             )
 
             // Check for duplicates
@@ -299,6 +301,7 @@ struct BankFileImportView: View {
                 continue
             }
 
+            transaction.account = account
             context.insert(transaction)
 
             // Auto-categorise using rules
@@ -307,7 +310,7 @@ struct BankFileImportView: View {
         }
 
         account.recalculateBalance()
-        try? context.save()
+        context.saveOrLog()
 
         importResult = ImportResultInfo(imported: imported, duplicates: duplicates)
     }

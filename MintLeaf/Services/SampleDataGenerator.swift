@@ -12,7 +12,7 @@ struct SampleDataGenerator {
         var categories = fetchCategories(context: context)
         if categories.isEmpty {
             DefaultCategories.seed(context: context)
-            try? context.save()
+            context.saveOrLog()
             categories = fetchCategories(context: context)
         }
         let cal = Calendar.current

@@ -83,7 +83,7 @@ struct AccountReorderSheet: View {
         for (offset, account) in archived.enumerated() {
             account.sortOrder = ordered.count + offset
         }
-        try? context.save()
+        context.saveOrLog()
         dismiss()
     }
 }

@@ -61,11 +61,18 @@ final class CSVImporter {
         return fields
     }
 
+    /// Date formats the user can pick from at import time. dd/MM and MM/dd are
+    /// ambiguous with each other, so we never silently fall back between them —
+    /// only the unambiguous ISO format is tried as a backup.
+    static let dateFormats = ["dd/MM/yyyy", "MM/dd/yyyy", "yyyy-MM-dd"]
+
     static func importTransactions(
         rows: [[String]],
         columns: [CSVColumn],
         account: Account,
-        context: ModelContext
+        context: ModelContext,
+        dateFormat: String = "dd/MM/yyyy",
+        detectDuplicates: Bool = true
     ) -> CSVImportResult {
         var imported = 0
         var skipped = 0
@@ -74,13 +81,12 @@ final class CSVImporter {
         let existingTransactions = account.transactions
 
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "MM/dd/yyyy"
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = dateFormat
 
-        let altDateFormatter = DateFormatter()
-        altDateFormatter.dateFormat = "yyyy-MM-dd"
-
-        let ukDateFormatter = DateFormatter()
-        ukDateFormatter.dateFormat = "dd/MM/yyyy"
+        let isoFallback = DateFormatter()
+        isoFallback.locale = Locale(identifier: "en_US_POSIX")
+        isoFallback.dateFormat = "yyyy-MM-dd"
 
         for (index, row) in rows.enumerated() {
             do {
@@ -98,8 +104,7 @@ final class CSVImporter {
                     switch column.mapping {
                     case .date:
                         guard let d = dateFormatter.date(from: value)
-                                ?? altDateFormatter.date(from: value)
-                                ?? ukDateFormatter.date(from: value) else {
+                                ?? isoFallback.date(from: value) else {
                             throw ImportError.invalidDate(row: index + 2, value: value)
                         }
                         date = d
@@ -144,13 +149,19 @@ final class CSVImporter {
                     continue
                 }
 
-                let candidate = Transaction(amount: amount, title: title, date: date, notes: notes, account: account)
-                let dupes = DuplicateDetector.findDuplicates(incoming: [candidate], existing: existingTransactions)
-                if !dupes.isEmpty {
-                    duplicatesDetected += 1
-                    continue
+                // Don't link the account until we know we're keeping it — relating an
+                // unmanaged model to a persisted one gets it implicitly saved, so
+                // "skipped" duplicates were quietly imported anyway.
+                let candidate = Transaction(amount: amount, title: title, date: date, notes: notes)
+                if detectDuplicates {
+                    let dupes = DuplicateDetector.findDuplicates(incoming: [candidate], existing: existingTransactions)
+                    if !dupes.isEmpty {
+                        duplicatesDetected += 1
+                        continue
+                    }
                 }
 
+                candidate.account = account
                 context.insert(candidate)
                 imported += 1
             } catch {

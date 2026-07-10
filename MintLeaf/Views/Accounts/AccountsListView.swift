@@ -26,7 +26,7 @@ struct AccountsListView: View {
         for (offset, account) in archivedAccounts.enumerated() {
             account.sortOrder = reordered.count + offset
         }
-        try? context.save()
+        context.saveOrLog()
     }
 
     var body: some View {

@@ -324,11 +324,12 @@ struct ExcelImportView: View {
             }
 
             let title = normalizeNames ? MerchantNormalizer.normalize(parsed.title) : parsed.title
+            // Account linked after the dupe check so skipped duplicates aren't
+            // implicitly persisted by the relationship.
             let transaction = Transaction(
                 amount: parsed.amount,
                 title: title,
-                date: parsed.date!,
-                account: account
+                date: parsed.date!
             )
 
             // Duplicate detection
@@ -343,6 +344,7 @@ struct ExcelImportView: View {
                 }
             }
 
+            transaction.account = account
             context.insert(transaction)
             imported += 1
         }
