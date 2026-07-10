@@ -184,7 +184,7 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) {}
             Button("Load") {
                 SampleDataGenerator.populate(context: context)
-                try? context.save()
+                context.saveOrLog()
                 showStatus("Sample data loaded successfully")
             }
         } message: {
@@ -607,7 +607,7 @@ struct SettingsView: View {
                     }
                     Button("Replay") {
                         appearance = pendingAppearance
-                        try? context.save()
+                        context.saveOrLog()
                         #if os(macOS)
                         NSApp.keyWindow?.close()
                         #endif
@@ -687,7 +687,7 @@ struct SettingsView: View {
                 Spacer()
                 Button("Save & Close") {
                     appearance = pendingAppearance
-                    try? context.save()
+                    context.saveOrLog()
                     NSApp.keyWindow?.close()
                 }
                 .buttonStyle(.borderedProminent)

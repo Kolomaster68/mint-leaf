@@ -55,7 +55,7 @@ enum ScheduledTransactionProcessor {
                     }
                 }
 
-                let next = nextOccurrence(after: scheduled.nextDate, frequency: scheduled.frequency, calendar: calendar)
+                let next = scheduled.frequency.advance(scheduled.nextDate)
                 if next <= scheduled.nextDate {
                     scheduled.nextDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
                     break
@@ -68,7 +68,7 @@ enum ScheduledTransactionProcessor {
                 scheduled.nextDate = calendar.date(byAdding: .day, value: 1, to: now) ?? now
             }
 
-            try? context.save()
+            context.saveOrLog()
         }
     }
 
@@ -106,20 +106,4 @@ enum ScheduledTransactionProcessor {
         }
     }
 
-    private static func nextOccurrence(after date: Date, frequency: RecurrenceFrequency, calendar: Calendar) -> Date {
-        switch frequency {
-        case .daily:
-            return calendar.date(byAdding: .day, value: 1, to: date) ?? date.addingTimeInterval(86400)
-        case .weekly:
-            return calendar.date(byAdding: .weekOfYear, value: 1, to: date) ?? date.addingTimeInterval(604800)
-        case .biweekly:
-            return calendar.date(byAdding: .weekOfYear, value: 2, to: date) ?? date.addingTimeInterval(1209600)
-        case .monthly:
-            return calendar.date(byAdding: .month, value: 1, to: date) ?? date.addingTimeInterval(2592000)
-        case .quarterly:
-            return calendar.date(byAdding: .month, value: 3, to: date) ?? date.addingTimeInterval(7776000)
-        case .yearly:
-            return calendar.date(byAdding: .year, value: 1, to: date) ?? date.addingTimeInterval(31536000)
-        }
-    }
 }

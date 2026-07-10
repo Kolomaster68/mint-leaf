@@ -176,7 +176,7 @@ struct WelcomeView: View {
                     isLoading = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         SampleDataGenerator.populate(context: context)
-                        try? context.save()
+                        context.saveOrLog()
                         isLoading = false
                         shouldStartTutorial = true
                         hasCompletedOnboarding = true
@@ -203,7 +203,7 @@ struct WelcomeView: View {
                     isLoading = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         SampleDataGenerator.populate(context: context)
-                        try? context.save()
+                        context.saveOrLog()
                         isLoading = false
                         hasCompletedOnboarding = true
                     }

@@ -89,6 +89,10 @@ struct ContentView: View {
             navigateForTutorialStep()
         }
         .onAppear {
+            #if DEBUG
+            DebugChecks.run()
+            #endif
+            Task { await ExchangeRateService.shared.refresh() }
             seedIfNeeded()
             if !MintLeafApp.isDevMode {
                 BackupManager.performAutomaticBackup(context: context)
@@ -134,7 +138,10 @@ struct ContentView: View {
             }
             .tabItem { Label("Settings", systemImage: "gear") }
         }
-        .onAppear(perform: seedIfNeeded)
+        .onAppear {
+            seedIfNeeded()
+            Task { await ExchangeRateService.shared.refresh() }
+        }
         #endif
     }
 

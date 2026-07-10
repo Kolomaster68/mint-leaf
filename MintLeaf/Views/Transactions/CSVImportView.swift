@@ -19,6 +19,7 @@ struct CSVImportView: View {
     @State private var errorMessage: String?
     @State private var normalizeNames = true
     @State private var detectDuplicates = true
+    @AppStorage("csvDateFormat") private var dateFormat = "dd/MM/yyyy"
 
     var body: some View {
         NavigationStack {
@@ -116,6 +117,11 @@ struct CSVImportView: View {
             }
 
             Section("Smart Import") {
+                Picker("Date format", selection: $dateFormat) {
+                    Text("31/12/2026 (UK)").tag("dd/MM/yyyy")
+                    Text("12/31/2026 (US)").tag("MM/dd/yyyy")
+                    Text("2026-12-31 (ISO)").tag("yyyy-MM-dd")
+                }
                 Toggle("Normalize merchant names", isOn: $normalizeNames)
                 Toggle("Detect duplicates", isOn: $detectDuplicates)
             }
@@ -175,7 +181,9 @@ struct CSVImportView: View {
             rows: rows,
             columns: columns,
             account: account,
-            context: context
+            context: context,
+            dateFormat: dateFormat,
+            detectDuplicates: detectDuplicates
         )
 
         if normalizeNames {

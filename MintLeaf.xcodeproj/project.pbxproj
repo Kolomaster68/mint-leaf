@@ -27,6 +27,10 @@
 		3020A715FF58B122BE32DC6C /* BudgetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478E581F071EAF9E99DF05C9 /* BudgetDetailView.swift */; };
 		315DA72C73863EB49848E0FD /* PrivacyDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B7EAF62887A709BF79C7E /* PrivacyDashboardView.swift */; };
 		32CD8C8A213B75A6729BAA51 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C6523EB5198D27C0769F83 /* BackupManager.swift */; };
+		MSAVE0000000BUILD1MAC000 /* ModelContext+Save.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */; };
+		MSAVE0000000BUILD2IOS000 /* ModelContext+Save.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */; };
+		DBGCK0000000BUILD1MAC000 /* DebugChecks.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGCK0000000000FILEREF00 /* DebugChecks.swift */; };
+		DBGCK0000000BUILD2IOS000 /* DebugChecks.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGCK0000000000FILEREF00 /* DebugChecks.swift */; };
 		3985CE2A5C6EEC11EB2A92E7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEFCC3D4C17863C5967F82D /* SettingsView.swift */; };
 		3D35960F67F7ADB6136CBC36 /* ScheduledTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2794C7A69AC7B5460F641DE /* ScheduledTransaction.swift */; };
 		3E92133DE2A6095170F02B9A /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2981C18F8F5FF94887B2B12 /* Color+Hex.swift */; };
@@ -120,8 +124,6 @@
 		CB255A0905F679471BF5D719 /* MintLeafApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBC5F2D5FA90363BE44FB130 /* MintLeafApp.swift */; };
 		CF7F8953815F274A0FB3140C /* TutorialOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = F33A376BFC01600E43C026DB /* TutorialOverlay.swift */; };
 		CFBF4922F63175A316EE0592 /* EditTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 499957622882D24295D729C4 /* EditTransactionSheet.swift */; };
-		CSOON1234BUILD1MACOSVIEW /* ComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSOON123456789FILEREF00 /* ComingSoonView.swift */; };
-		CSOON1234BUILD2IOSVIEW00 /* ComingSoonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CSOON123456789FILEREF00 /* ComingSoonView.swift */; };
 		D03184229B5BB6FD0A046C8B /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2981C18F8F5FF94887B2B12 /* Color+Hex.swift */; };
 		D324263DEC868FFE7E48E274 /* DayOfMonthPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB4E356E27035B333B965FAB /* DayOfMonthPicker.swift */; };
 		D459C3240B02463CD33FF5D8 /* Budget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69AE3A5B4C81A30B2DADD17C /* Budget.swift */; };
@@ -194,6 +196,8 @@
 		66E1614B23D6F2F28D2E3205 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		69AE3A5B4C81A30B2DADD17C /* Budget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Budget.swift; sourceTree = "<group>"; };
 		73C6523EB5198D27C0769F83 /* BackupManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
+		MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContext+Save.swift"; sourceTree = "<group>"; };
+		DBGCK0000000000FILEREF00 /* DebugChecks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugChecks.swift; sourceTree = "<group>"; };
 		764948207F06C157B91536FB /* BudgetListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetListView.swift; sourceTree = "<group>"; };
 		76810DE866A810A4B401E550 /* NetWorthView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NetWorthView.swift; sourceTree = "<group>"; };
 		7A3B6DF6E35CAFB66B2EB45B /* CurrencyFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyFormatter.swift; sourceTree = "<group>"; };
@@ -219,7 +223,6 @@
 		C4E1C2486B0DE382EB881000 /* CSVImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImporter.swift; sourceTree = "<group>"; };
 		C699CAE5ACFAF168F464F011 /* MerchantNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantNormalizer.swift; sourceTree = "<group>"; };
 		CBEFCC3D4C17863C5967F82D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		CSOON123456789FILEREF00 /* ComingSoonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComingSoonView.swift; sourceTree = "<group>"; };
 		D254976ADBC3A755AAF10804 /* DataIntegrityView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataIntegrityView.swift; sourceTree = "<group>"; };
 		D306CEB1B9522706C5DEFC96 /* NewBudgetSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBudgetSheet.swift; sourceTree = "<group>"; };
 		DFD76ABAEA44586D185B3F8E /* RulesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesEngine.swift; sourceTree = "<group>"; };
@@ -295,6 +298,7 @@
 				F2981C18F8F5FF94887B2B12 /* Color+Hex.swift */,
 				903D6F2F67143DDEAA843385 /* View+SheetForm.swift */,
 				1EF269D0F8126C02D073608A /* FlowLayout.swift */,
+				MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -327,6 +331,7 @@
 				BD4D18468708658EF208F1AA /* BankFileImporter.swift */,
 				73C6523EB5198D27C0769F83 /* BackupManager.swift */,
 				442CBA69D66BBD1DD861A5B1 /* TransferService.swift */,
+				DBGCK0000000000FILEREF00 /* DebugChecks.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -334,7 +339,6 @@
 		70FF1B430B3BAC7FFBDC204D /* Components */ = {
 			isa = PBXGroup;
 			children = (
-				CSOON123456789FILEREF00 /* ComingSoonView.swift */,
 				96BE105672FA0DB963717B80 /* LockScreenView.swift */,
 				NOTIF123456789FILEREF0 /* NotificationCenterView.swift */,
 				F33A376BFC01600E43C026DB /* TutorialOverlay.swift */,
@@ -574,7 +578,6 @@
 				DF36ED983A42AD98978A00C9 /* ScheduledTransaction.swift in Sources */,
 				91823EE3AEC459EC19ACBF26 /* SettingsView.swift in Sources */,
 				ABCD1234BUILD1SUBSCALMAC /* SubscriptionCalendarView.swift in Sources */,
-				CSOON1234BUILD1MACOSVIEW /* ComingSoonView.swift in Sources */,
 				NOTIF1234BUILD1MACVIEW00 /* NotificationCenterView.swift in Sources */,
 				SCURR1234BUILD1MACVIEW0 /* SupportedCurrencies.swift in Sources */,
 				SRCHV1234BUILD1MACVIEW0 /* SearchView.swift in Sources */,
@@ -607,6 +610,8 @@
 				10AF6CD933C8E7732E4964ED /* BankFileImportView.swift in Sources */,
 				84C604F344D2305E6A97012D /* DayOfMonthPicker.swift in Sources */,
 				32CD8C8A213B75A6729BAA51 /* BackupManager.swift in Sources */,
+				MSAVE0000000BUILD1MAC000 /* ModelContext+Save.swift in Sources */,
+				DBGCK0000000BUILD1MAC000 /* DebugChecks.swift in Sources */,
 				F430D02C7B0C75EA4982F130 /* AccountReorderSheet.swift in Sources */,
 				8089E2C34E11C94145C2C421 /* DataIntegrityView.swift in Sources */,
 				04016F1F678D31A31CCC6C28 /* TransferService.swift in Sources */,
@@ -657,7 +662,6 @@
 				3D35960F67F7ADB6136CBC36 /* ScheduledTransaction.swift in Sources */,
 				3985CE2A5C6EEC11EB2A92E7 /* SettingsView.swift in Sources */,
 				ABCD1234BUILD2SUBSCALIOS /* SubscriptionCalendarView.swift in Sources */,
-				CSOON1234BUILD2IOSVIEW00 /* ComingSoonView.swift in Sources */,
 				NOTIF1234BUILD2IOSVIEW0 /* NotificationCenterView.swift in Sources */,
 				SCURR1234BUILD2IOSVIEW /* SupportedCurrencies.swift in Sources */,
 				SRCHV1234BUILD2IOSVIEW0 /* SearchView.swift in Sources */,
@@ -690,6 +694,8 @@
 				47FA4D6A4D029AF898BC577C /* BankFileImportView.swift in Sources */,
 				D324263DEC868FFE7E48E274 /* DayOfMonthPicker.swift in Sources */,
 				D58130B1B5E48AB2B47E6AA8 /* BackupManager.swift in Sources */,
+				MSAVE0000000BUILD2IOS000 /* ModelContext+Save.swift in Sources */,
+				DBGCK0000000BUILD2IOS000 /* DebugChecks.swift in Sources */,
 				851F6FD169BCFC8CB6285265 /* AccountReorderSheet.swift in Sources */,
 				60D5949EEBF4A1EB0066BC3A /* DataIntegrityView.swift in Sources */,
 				5C274F75F37C1D936545E357 /* TransferService.swift in Sources */,

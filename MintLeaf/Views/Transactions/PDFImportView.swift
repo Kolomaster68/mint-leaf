@@ -255,11 +255,12 @@ struct PDFImportView: View {
             let parsed = statement.transactions[index]
             let amount = parsed.amount ?? 0
             let title = MerchantNormalizer.normalize(parsed.title)
+            // Account linked after the dupe check so skipped duplicates aren't
+            // implicitly persisted by the relationship.
             let transaction = Transaction(
                 amount: amount,
                 title: title,
-                date: parsed.date ?? Date(),
-                account: account
+                date: parsed.date ?? Date()
             )
 
             if detectDuplicates {
@@ -273,6 +274,7 @@ struct PDFImportView: View {
                 }
             }
 
+            transaction.account = account
             context.insert(transaction)
             count += 1
         }

@@ -20,6 +20,7 @@ struct InsightsView: View {
             VStack(spacing: 20) {
                 forecastSection
                 anomalySection
+                priceChangeSection
                 recurringSection
             }
             .padding()
@@ -156,6 +157,69 @@ struct InsightsView: View {
         .padding()
         .background(AppTheme.cardBackground(for: scheme), in: RoundedRectangle(cornerRadius: 12))
             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AppTheme.accent(for: scheme).opacity(0.12), lineWidth: 1))
+    }
+
+    private struct PriceChange: Identifiable {
+        let id = UUID()
+        let merchant: String
+        let oldAmount: Decimal
+        let newAmount: Decimal
+        var percent: Double {
+            NSDecimalNumber(decimal: (newAmount - oldAmount) / oldAmount * 100).doubleValue
+        }
+    }
+
+    /// Recurring merchants whose price was stable and then moved on the latest charge.
+    /// Keyed off RecurringDetector so variable spends (e.g. supermarkets) stay quiet.
+    private var priceChanges: [PriceChange] {
+        let grouped = Dictionary(grouping: allTransactions.filter { $0.isExpense }) { $0.title.lowercased() }
+        let patterns = RecurringDetector.detect(transactions: allTransactions)
+        var changes: [PriceChange] = []
+        for pattern in patterns {
+            guard let txns = grouped[pattern.merchantName.lowercased()], txns.count >= 3 else { continue }
+            let amounts = txns.sorted { $0.date < $1.date }.map { abs($0.amount) }
+            let last = amounts[amounts.count - 1]
+            let prev = amounts[amounts.count - 2]
+            let prevPrev = amounts[amounts.count - 3]
+            if prev == prevPrev && last != prev && prev > 0 {
+                changes.append(PriceChange(merchant: pattern.merchantName, oldAmount: prev, newAmount: last))
+            }
+        }
+        return changes.sorted { abs($0.percent) > abs($1.percent) }
+    }
+
+    @ViewBuilder
+    private var priceChangeSection: some View {
+        let changes = priceChanges
+        if !changes.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Price Changes")
+                    .font(.headline)
+
+                ForEach(changes) { change in
+                    HStack {
+                        Image(systemName: change.newAmount > change.oldAmount ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
+                            .foregroundStyle(change.newAmount > change.oldAmount ? .red : .green)
+                        VStack(alignment: .leading) {
+                            Text(change.merchant)
+                                .font(.subheadline.bold())
+                            Text("was \(CurrencyFormatter.shared.format(change.oldAmount)), now \(CurrencyFormatter.shared.format(change.newAmount))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text(String(format: "%+.0f%%", change.percent))
+                            .font(.subheadline.bold().monospacedDigit())
+                            .foregroundStyle(change.newAmount > change.oldAmount ? .red : .green)
+                    }
+                    .padding(.vertical, 4)
+                    Divider()
+                }
+            }
+            .padding()
+            .background(AppTheme.cardBackground(for: scheme), in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AppTheme.accent(for: scheme).opacity(0.12), lineWidth: 1))
+        }
     }
 
     @ViewBuilder

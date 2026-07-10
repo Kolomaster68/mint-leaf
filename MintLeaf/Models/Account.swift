@@ -114,9 +114,11 @@ final class Account {
         guard let lastStatement = lastStatementDate() else { return 0 }
         let prevStatement = previousStatement(from: lastStatement)
         let cal = Calendar.current
+        // Strictly before the day after the statement date, so a midnight-dated txn
+        // (what CSV/OFX imports produce) can't land in both billed and unbilled.
         let billed = transactions.filter { txn in
             let d = txn.date
-            return d > prevStatement && d <= cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: lastStatement))!
+            return d > prevStatement && d < cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: lastStatement))!
         }
         // Statement balance is what you OWE: negative of the net spend on the card.
         let net = billed.reduce(Decimal.zero) { $0 + $1.amount }

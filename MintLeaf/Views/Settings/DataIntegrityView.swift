@@ -218,7 +218,7 @@ struct DataIntegrityView: View {
     // MARK: - Actions
 
     private func save(_ message: String) {
-        try? context.save()
+        context.saveOrLog()
         statusMessage = message
         refreshToken += 1
     }
@@ -235,7 +235,7 @@ struct DataIntegrityView: View {
                 removed += 1
             }
         }
-        try? context.save()
+        context.saveOrLog()
         for account in accounts where affected.contains(account.persistentModelID) {
             account.recalculateBalance()
         }
