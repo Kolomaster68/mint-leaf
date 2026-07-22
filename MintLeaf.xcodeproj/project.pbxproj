@@ -27,10 +27,6 @@
 		3020A715FF58B122BE32DC6C /* BudgetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 478E581F071EAF9E99DF05C9 /* BudgetDetailView.swift */; };
 		315DA72C73863EB49848E0FD /* PrivacyDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390B7EAF62887A709BF79C7E /* PrivacyDashboardView.swift */; };
 		32CD8C8A213B75A6729BAA51 /* BackupManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73C6523EB5198D27C0769F83 /* BackupManager.swift */; };
-		MSAVE0000000BUILD1MAC000 /* ModelContext+Save.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */; };
-		MSAVE0000000BUILD2IOS000 /* ModelContext+Save.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */; };
-		DBGCK0000000BUILD1MAC000 /* DebugChecks.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGCK0000000000FILEREF00 /* DebugChecks.swift */; };
-		DBGCK0000000BUILD2IOS000 /* DebugChecks.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBGCK0000000000FILEREF00 /* DebugChecks.swift */; };
 		3985CE2A5C6EEC11EB2A92E7 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBEFCC3D4C17863C5967F82D /* SettingsView.swift */; };
 		3D35960F67F7ADB6136CBC36 /* ScheduledTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2794C7A69AC7B5460F641DE /* ScheduledTransaction.swift */; };
 		3E92133DE2A6095170F02B9A /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2981C18F8F5FF94887B2B12 /* Color+Hex.swift */; };
@@ -53,6 +49,7 @@
 		56E6ECBDC970D2187552F1DB /* TransactionInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62FD03283A3339CFD428E0DD /* TransactionInboxView.swift */; };
 		574F8042DA083360CD21A8E6 /* ReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87AAD428F32B3E0DEEBD44C5 /* ReportsView.swift */; };
 		58290C7DEAD1847270DBF1DF /* BiometricAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37CB2DE354AEF4D223FC0B8 /* BiometricAuth.swift */; };
+		59E3E4B458CE4C478DA8D838 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F9BA42D58CAA546CE2A2EEC5 /* Cocoa.framework */; };
 		5A54208808BC7DA1491C7723 /* AnomalyDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = FDD480F259C5D20EC8393529 /* AnomalyDetector.swift */; };
 		5BC5CFE47045402173462D64 /* Goal.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED958060991703FC629A5AF6 /* Goal.swift */; };
 		5BDCB477485F9C86C37BFF56 /* ForecastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8E45F176FBF5386A1CDAB9 /* ForecastView.swift */; };
@@ -100,6 +97,7 @@
 		A7E1EFEF514B632E022FAC04 /* BankFileImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD4D18468708658EF208F1AA /* BankFileImporter.swift */; };
 		ABCD1234BUILD1SUBSCALMAC /* SubscriptionCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD123456789SUBSCALVIEW /* SubscriptionCalendarView.swift */; };
 		ABCD1234BUILD2SUBSCALIOS /* SubscriptionCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABCD123456789SUBSCALVIEW /* SubscriptionCalendarView.swift */; };
+		AFC1ADB3145B591338276A0B /* MoneyMathTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD63828EBAAED839DA5D4B07 /* MoneyMathTests.swift */; };
 		APCMD1234BUILD1MACVIEW0 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = APCMD123456789FILEREF0 /* AppCommands.swift */; };
 		APCMD1234BUILD2IOSVIEW0 /* AppCommands.swift in Sources */ = {isa = PBXBuildFile; fileRef = APCMD123456789FILEREF0 /* AppCommands.swift */; };
 		B120207955CD09422115AE9E /* ForecastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA8E45F176FBF5386A1CDAB9 /* ForecastView.swift */; };
@@ -153,6 +151,8 @@
 		FF9BCAC23A0AAAAD40E8F04D /* DuplicateDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F0C106D9D6EB103EDD59746 /* DuplicateDetector.swift */; };
 		IMEX1234BUILD1MACVIEW00 /* ImportExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMEX1234FILEREF0000000 /* ImportExportView.swift */; };
 		IMEX1234BUILD2IOSVIEW00 /* ImportExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = IMEX1234FILEREF0000000 /* ImportExportView.swift */; };
+		MSAVE0000000BUILD1MAC000 /* ModelContext+Save.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */; };
+		MSAVE0000000BUILD2IOS000 /* ModelContext+Save.swift in Sources */ = {isa = PBXBuildFile; fileRef = MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */; };
 		NOTIF1234BUILD1MACVIEW00 /* NotificationCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF123456789FILEREF0 /* NotificationCenterView.swift */; };
 		NOTIF1234BUILD2IOSVIEW0 /* NotificationCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = NOTIF123456789FILEREF0 /* NotificationCenterView.swift */; };
 		SCURR1234BUILD1MACVIEW0 /* SupportedCurrencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = SCURR123456789FILEREF0 /* SupportedCurrencies.swift */; };
@@ -165,8 +165,19 @@
 		XLSX1234BUILD2IOSVIEW00 /* XLSXImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = XLSX1234FILEREF0000000 /* XLSXImporter.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		17AA3228B3DBCA2F451F7E72 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = ADB92CEADBDD9CCA311F3CDF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 1F4835C7A2C22C4E4BD1EF8C;
+			remoteInfo = MintLeaf_macOS;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		011BDE0568F617717E4BF168 /* TutorialEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialEngine.swift; sourceTree = "<group>"; };
+		04B0CD2D1D24D263DD930E93 /* MintLeafTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MintLeafTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		0721006D808100F736805DBD /* PDFImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFImportView.swift; sourceTree = "<group>"; };
 		073E7F3B5A9437A6519CC7E5 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
 		0AB67F8D05AD893CF1A99D09 /* RecurringDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecurringDetector.swift; sourceTree = "<group>"; };
@@ -196,8 +207,6 @@
 		66E1614B23D6F2F28D2E3205 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		69AE3A5B4C81A30B2DADD17C /* Budget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Budget.swift; sourceTree = "<group>"; };
 		73C6523EB5198D27C0769F83 /* BackupManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
-		MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContext+Save.swift"; sourceTree = "<group>"; };
-		DBGCK0000000000FILEREF00 /* DebugChecks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugChecks.swift; sourceTree = "<group>"; };
 		764948207F06C157B91536FB /* BudgetListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetListView.swift; sourceTree = "<group>"; };
 		76810DE866A810A4B401E550 /* NetWorthView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NetWorthView.swift; sourceTree = "<group>"; };
 		7A3B6DF6E35CAFB66B2EB45B /* CurrencyFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyFormatter.swift; sourceTree = "<group>"; };
@@ -223,6 +232,7 @@
 		C4E1C2486B0DE382EB881000 /* CSVImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImporter.swift; sourceTree = "<group>"; };
 		C699CAE5ACFAF168F464F011 /* MerchantNormalizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MerchantNormalizer.swift; sourceTree = "<group>"; };
 		CBEFCC3D4C17863C5967F82D /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		CD63828EBAAED839DA5D4B07 /* MoneyMathTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MoneyMathTests.swift; path = MintLeafTests/MoneyMathTests.swift; sourceTree = "<group>"; };
 		D254976ADBC3A755AAF10804 /* DataIntegrityView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DataIntegrityView.swift; sourceTree = "<group>"; };
 		D306CEB1B9522706C5DEFC96 /* NewBudgetSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewBudgetSheet.swift; sourceTree = "<group>"; };
 		DFD76ABAEA44586D185B3F8E /* RulesEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RulesEngine.swift; sourceTree = "<group>"; };
@@ -239,15 +249,28 @@
 		F1A2B3C4D5E6F7A8B9C0D1E2 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 		F2981C18F8F5FF94887B2B12 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		F33A376BFC01600E43C026DB /* TutorialOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TutorialOverlay.swift; sourceTree = "<group>"; };
+		F9BA42D58CAA546CE2A2EEC5 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		FDD480F259C5D20EC8393529 /* AnomalyDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnomalyDetector.swift; sourceTree = "<group>"; };
 		FE259EA4BC80D719E23EE36D /* TagsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TagsView.swift; sourceTree = "<group>"; };
 		IMEX1234FILEREF0000000 /* ImportExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportView.swift; sourceTree = "<group>"; };
+		MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelContext+Save.swift"; sourceTree = "<group>"; };
 		NOTIF123456789FILEREF0 /* NotificationCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCenterView.swift; sourceTree = "<group>"; };
 		SCURR123456789FILEREF0 /* SupportedCurrencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupportedCurrencies.swift; sourceTree = "<group>"; };
 		SRCHV123456789FILEREF0 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		XLSV1234FILEREF0000000 /* ExcelImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcelImportView.swift; sourceTree = "<group>"; };
 		XLSX1234FILEREF0000000 /* XLSXImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XLSXImporter.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		77A10096011ECDF5C841CC6A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				59E3E4B458CE4C478DA8D838 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
 		0E6D861CAA28CED22BC68F9E /* Accounts */ = {
@@ -281,6 +304,14 @@
 			path = Trends;
 			sourceTree = "<group>";
 		};
+		30DDA7DC02C05E2739178743 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				503712C9D2AB109C0B860D64 /* OS X */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		3D901F19EA3E5BC4185887B6 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -301,6 +332,14 @@
 				MSAVE0000000000FILEREF00 /* ModelContext+Save.swift */,
 			);
 			path = Extensions;
+			sourceTree = "<group>";
+		};
+		503712C9D2AB109C0B860D64 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				F9BA42D58CAA546CE2A2EEC5 /* Cocoa.framework */,
+			);
+			name = "OS X";
 			sourceTree = "<group>";
 		};
 		617DFCDA23A57CCB9DB67062 /* Services */ = {
@@ -331,7 +370,6 @@
 				BD4D18468708658EF208F1AA /* BankFileImporter.swift */,
 				73C6523EB5198D27C0769F83 /* BackupManager.swift */,
 				442CBA69D66BBD1DD861A5B1 /* TransferService.swift */,
-				DBGCK0000000000FILEREF00 /* DebugChecks.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -362,6 +400,14 @@
 				DA7E26F34C2544E17F2898F1 /* Views */,
 			);
 			path = MintLeaf;
+			sourceTree = "<group>";
+		};
+		7A2A38A84B666467E1776EA1 /* MintLeafTests */ = {
+			isa = PBXGroup;
+			children = (
+				CD63828EBAAED839DA5D4B07 /* MoneyMathTests.swift */,
+			);
+			name = MintLeafTests;
 			sourceTree = "<group>";
 		};
 		982CDC8C64404B60E1E45A26 /* Transactions */ = {
@@ -438,6 +484,9 @@
 			children = (
 				771F588FFE5A0F1A1AE6963F /* MintLeaf */,
 				C8585C5975997B63B0CE20C0 /* Products */,
+				04B0CD2D1D24D263DD930E93 /* MintLeafTests.xctest */,
+				30DDA7DC02C05E2739178743 /* Frameworks */,
+				7A2A38A84B666467E1776EA1 /* MintLeafTests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -459,6 +508,24 @@
 			productName = MintLeaf_macOS;
 			productReference = E25BEA4C10DB6EBAB7C56C69 /* MintLeaf.app */;
 			productType = "com.apple.product-type.application";
+		};
+		8D631D7E08C825D61419EA3C /* MintLeafTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 413EF51507D6A23C2CBA3E14 /* Build configuration list for PBXNativeTarget "MintLeafTests" */;
+			buildPhases = (
+				5DBA049F88FEEC7D60EBFA99 /* Sources */,
+				77A10096011ECDF5C841CC6A /* Frameworks */,
+				03FA2AF2E60745361867CF26 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				37BC0C70FC01024E3E95E5D4 /* PBXTargetDependency */,
+			);
+			name = MintLeafTests;
+			productName = MintLeafTests;
+			productReference = 04B0CD2D1D24D263DD930E93 /* MintLeafTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		EACFB7A9A3035F4114699E80 /* MintLeaf_iOS */ = {
 			isa = PBXNativeTarget;
@@ -510,11 +577,19 @@
 			targets = (
 				EACFB7A9A3035F4114699E80 /* MintLeaf_iOS */,
 				1F4835C7A2C22C4E4BD1EF8C /* MintLeaf_macOS */,
+				8D631D7E08C825D61419EA3C /* MintLeafTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		03FA2AF2E60745361867CF26 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		93F46A1CB6E660D3EA159366 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -534,6 +609,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5DBA049F88FEEC7D60EBFA99 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AFC1ADB3145B591338276A0B /* MoneyMathTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		9D80248F11BBF3DA6625FB52 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -611,7 +694,6 @@
 				84C604F344D2305E6A97012D /* DayOfMonthPicker.swift in Sources */,
 				32CD8C8A213B75A6729BAA51 /* BackupManager.swift in Sources */,
 				MSAVE0000000BUILD1MAC000 /* ModelContext+Save.swift in Sources */,
-				DBGCK0000000BUILD1MAC000 /* DebugChecks.swift in Sources */,
 				F430D02C7B0C75EA4982F130 /* AccountReorderSheet.swift in Sources */,
 				8089E2C34E11C94145C2C421 /* DataIntegrityView.swift in Sources */,
 				04016F1F678D31A31CCC6C28 /* TransferService.swift in Sources */,
@@ -695,7 +777,6 @@
 				D324263DEC868FFE7E48E274 /* DayOfMonthPicker.swift in Sources */,
 				D58130B1B5E48AB2B47E6AA8 /* BackupManager.swift in Sources */,
 				MSAVE0000000BUILD2IOS000 /* ModelContext+Save.swift in Sources */,
-				DBGCK0000000BUILD2IOS000 /* DebugChecks.swift in Sources */,
 				851F6FD169BCFC8CB6285265 /* AccountReorderSheet.swift in Sources */,
 				60D5949EEBF4A1EB0066BC3A /* DataIntegrityView.swift in Sources */,
 				5C274F75F37C1D936545E357 /* TransferService.swift in Sources */,
@@ -704,7 +785,31 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		37BC0C70FC01024E3E95E5D4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = MintLeaf_macOS;
+			target = 1F4835C7A2C22C4E4BD1EF8C /* MintLeaf_macOS */;
+			targetProxy = 17AA3228B3DBCA2F451F7E72 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		1BB87EEB9743EF7B3BEEFF0B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joefarmer.mintleaf.tests;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MintLeaf.app/Contents/MacOS/MintLeaf";
+			};
+			name = Debug;
+		};
 		4AE9ABC20BBCCA43CC6429C8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -854,6 +959,21 @@
 			};
 			name = Debug;
 		};
+		85DF78B639F4984E760879DC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = NO;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.joefarmer.mintleaf.tests;
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MintLeaf.app/Contents/MacOS/MintLeaf";
+			};
+			name = Release;
+		};
 		F489F1ECB329D0F9A642C905 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -945,6 +1065,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		413EF51507D6A23C2CBA3E14 /* Build configuration list for PBXNativeTarget "MintLeafTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				85DF78B639F4984E760879DC /* Release */,
+				1BB87EEB9743EF7B3BEEFF0B /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		9883F0A3A12D8E198ADCDCAE /* Build configuration list for PBXNativeTarget "MintLeaf_macOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

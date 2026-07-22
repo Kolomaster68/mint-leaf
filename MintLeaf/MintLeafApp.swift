@@ -4,12 +4,19 @@ import SwiftData
 @main
 struct MintLeafApp: App {
     let container: ModelContainer
+
+    /// The single in-memory container created under XCTest; tests reuse it (one
+    /// container per process — a second one traps SwiftData).
+    nonisolated(unsafe) static var testContainer: ModelContainer?
     @AppStorage("appAppearance") private var appearance: String = AppAppearance.system.rawValue
     @AppStorage("textSizeOffset") private var textSizeOffset: Int = 0
     @AppStorage("highContrastMode") private var highContrastMode = false
     @AppStorage("reduceMotion") private var reduceMotion = false
 
     static let isDevMode = ProcessInfo.processInfo.arguments.contains("-useSampleData")
+
+    /// True when the host app is launched by the XCTest runner — skip launch side-effects.
+    static let isRunningTests = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
 
     init() {
         let schema = Schema([
@@ -24,6 +31,12 @@ struct MintLeafApp: App {
             Goal.self,
             Tag.self,
         ])
+        // Under XCTest use one in-memory container and share it with the tests.
+        if Self.isRunningTests {
+            container = try! ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
+            Self.testContainer = container
+            return
+        }
         let storeName = Self.isDevMode ? "MintLeaf-dev" : "MintLeaf"
         let config = ModelConfiguration(
             storeName,
