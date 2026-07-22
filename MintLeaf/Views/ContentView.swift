@@ -89,9 +89,7 @@ struct ContentView: View {
             navigateForTutorialStep()
         }
         .onAppear {
-            #if DEBUG
-            DebugChecks.run()
-            #endif
+            guard !MintLeafApp.isRunningTests else { return }
             Task { await ExchangeRateService.shared.refresh() }
             seedIfNeeded()
             if !MintLeafApp.isDevMode {
