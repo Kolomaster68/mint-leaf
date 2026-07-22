@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.0.0-gold" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.1.0-gold" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20iOS-blue" alt="Platform">
   <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift">
   <img src="https://img.shields.io/badge/swiftui-5.0-purple" alt="SwiftUI">
@@ -38,6 +38,12 @@
 <p align="center">
   <img src="screenshots/tutorial-overview-dark.png" width="800" alt="Mint Leaf Dashboard">
 </p>
+
+## What's New in v4.1
+
+- **Live Exchange Rates** — Multi-currency totals now use live ECB rates (via frankfurter.dev, no API key), cached and refreshed automatically, with the built-in table as a fallback
+- **Price-Change Alerts** — Insights flags recurring merchants whose price moved on the latest charge, so subscription creep doesn't slip past you
+- **Fixes** — Money-math and CSV import corrections, plus internal cleanup
 
 ## What's New in v4.0
 
@@ -257,6 +263,8 @@ Mint Leaf is under active development. Here's what's been shipped and what's com
 | v4.0 | Automatic Backups & Backup/Restore |
 | v4.0 | Data Health & Reconciliation |
 | v4.0 | Account Reordering |
+| v4.1 | Live Exchange Rates (ECB) |
+| v4.1 | Price-Change Alerts |
 
 ### Coming Next
 
