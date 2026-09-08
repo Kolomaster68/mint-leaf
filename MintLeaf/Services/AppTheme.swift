@@ -28,17 +28,12 @@ struct AppTheme {
 
     // MARK: - Dark mode surfaces (warm-tinted for depth)
     static let trueBlack = Color(red: 0.05, green: 0.05, blue: 0.055)
-    static let darkSurface = Color(red: 0.09, green: 0.09, blue: 0.095)
-    static let darkCard = Color(red: 0.12, green: 0.12, blue: 0.125)
-    static let darkCardElevated = Color(red: 0.15, green: 0.15, blue: 0.155)
-    static let darkSidebar = Color(red: 0.105, green: 0.105, blue: 0.115)
+    static let darkCard = Color(red: 0.085, green: 0.085, blue: 0.09)
     static let darkDivider = Color(red: 0.20, green: 0.20, blue: 0.21)
 
     // MARK: - Light mode surfaces
     static let lightSurface = Color(red: 0.955, green: 0.955, blue: 0.965)
     static let lightCard = Color.white
-    static let lightCardElevated = Color(red: 0.99, green: 0.99, blue: 1.0)
-    static let lightSidebar = Color(red: 0.915, green: 0.915, blue: 0.928)
     static let lightDivider = Color(red: 0.85, green: 0.85, blue: 0.87)
 
     // MARK: - Semantic colours
@@ -62,16 +57,8 @@ struct AppTheme {
         scheme == .dark ? darkCard : lightCard
     }
 
-    static func cardElevated(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? darkCardElevated : lightCardElevated
-    }
-
     static func surfaceBackground(for scheme: ColorScheme) -> Color {
         scheme == .dark ? trueBlack : lightSurface
-    }
-
-    static func sidebarBackground(for scheme: ColorScheme) -> Color {
-        scheme == .dark ? darkSidebar : lightSidebar
     }
 
     static func divider(for scheme: ColorScheme) -> Color {
@@ -95,12 +82,6 @@ struct PremiumCardModifier: ViewModifier {
                             : AppTheme.accent(for: scheme).opacity(highContrast ? 0.4 : 0.15),
                         lineWidth: highContrast ? 2 : 1
                     )
-            )
-            .shadow(
-                color: scheme == .light
-                    ? Color.black.opacity(0.04)
-                    : Color.clear,
-                radius: 8, x: 0, y: 2
             )
     }
 }

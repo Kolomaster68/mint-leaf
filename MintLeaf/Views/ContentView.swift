@@ -35,6 +35,7 @@ struct ContentView: View {
     @State private var editingAccount: Account?
     @State private var accountToDelete: Account?
     @State private var showingReorderAccounts = false
+    @AppStorage("sidebarVisible") private var showSidebar = true
     @AppStorage("biometricLockEnabled") private var biometricEnabled = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @AppStorage("sidebarAccountsCollapsed") private var accountsCollapsed = false
@@ -62,24 +63,44 @@ struct ContentView: View {
     @ViewBuilder
     private var mainContent: some View {
         #if os(macOS)
-        NavigationSplitView {
-            GeometryReader { geo in
-                sidebar
-                    .scaleEffect(textScale, anchor: .topLeading)
-                    .frame(width: geo.size.width / textScale, height: geo.size.height / textScale, alignment: .topLeading)
-                    .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+        // A plain split, not NavigationSplitView: AppKit paints its sidebar column
+        // with its own material, which no SwiftUI background can sit on top of.
+        // Owning the layout is the only way to get one flat surface.
+        HStack(spacing: 0) {
+            if showSidebar {
+                GeometryReader { geo in
+                    sidebar
+                        .scaleEffect(textScale, anchor: .topLeading)
+                        .frame(width: geo.size.width / textScale, height: geo.size.height / textScale, alignment: .topLeading)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                }
+                .frame(width: 240 * textScale)
+                .transition(.move(edge: .leading))
+                Divider()
             }
-            .navigationSplitViewColumnWidth(min: 200, ideal: 240 * textScale)
-        } detail: {
-            GeometryReader { geo in
-                detail
-                    .modifier(HighContrastModifier())
-                    .scaleEffect(textScale, anchor: .topLeading)
-                    .frame(width: geo.size.width / textScale, height: geo.size.height / textScale, alignment: .topLeading)
-                    .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+            NavigationStack {
+                GeometryReader { geo in
+                    detail
+                        .modifier(HighContrastModifier())
+                        .scaleEffect(textScale, anchor: .topLeading)
+                        .frame(width: geo.size.width / textScale, height: geo.size.height / textScale, alignment: .topLeading)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                }
             }
         }
         .frame(minWidth: 800, minHeight: 500)
+        .background(AppTheme.surfaceBackground(for: scheme).ignoresSafeArea())
+        .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.2)) { showSidebar.toggle() }
+                } label: {
+                    Image(systemName: "sidebar.leading")
+                }
+                .help("Hide or show the sidebar")
+                .keyboardShortcut("\\", modifiers: .command)
+            }
+        }
         .focusedSceneValue(\.sidebarSelection, $selection)
         .focusedSceneValue(\.showNewAccount, $showingNewAccount)
         .focusedSceneValue(\.showNotifications, $showingNotifications)
@@ -154,9 +175,9 @@ struct ContentView: View {
 
     private var sidebar: some View {
         ScrollViewReader { proxy in
-        List {
+        List(selection: $selection) {
             HStack {
-                sidebarRow("Overview", icon: "square.grid.2x2", destination: .overview)
+                sidebarLabel("Overview", icon: "square.grid.2x2", destination: .overview)
                 Spacer()
                 Button { showingNotifications = true } label: {
                     ZStack(alignment: .topTrailing) {
@@ -177,23 +198,20 @@ struct ContentView: View {
                 .buttonStyle(.plain)
                 .padding(.trailing, 10)
             }
+            .tag(SidebarDestination.overview)
+            .id(SidebarDestination.overview)
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
 
             sidebarRow("Search", icon: "magnifyingglass", destination: .search)
                 .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
 
             sidebarRow("Inbox", icon: "tray", destination: .inbox)
                 .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
 
-            Section {
-                if !accountsCollapsed {
+            Section(isExpanded: expanded($accountsCollapsed)) {
                     ForEach(accounts.filter { !$0.isArchived }) { account in
                         sidebarAccountRow(account)
                             .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
                             .swipeActions(edge: .leading) {
                                 Button {
                                     editingAccount = account
@@ -210,9 +228,8 @@ struct ContentView: View {
                                 }
                             }
                     }
-                }
             } header: {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Button {
                             withAnimation(.easeInOut(duration: 0.2)) { accountsCollapsed.toggle() }
@@ -245,8 +262,9 @@ struct ContentView: View {
                     .padding(.trailing, 10)
                 }
                     Text(CurrencyFormatter.shared.format(accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.currentBalance }))
-                        .font(.caption.monospacedDigit())
+                        .font(.subheadline.monospacedDigit())
                         .foregroundStyle(.secondary)
+                        .padding(.bottom, 2)
                 }
             }
 
@@ -255,7 +273,6 @@ struct ContentView: View {
                     ForEach(accounts.filter { $0.isArchived }) { account in
                         sidebarAccountRow(account)
                             .listRowSeparator(.hidden)
-                            .listRowBackground(Color.clear)
                             .opacity(0.6)
                     }
                 } header: {
@@ -265,104 +282,39 @@ struct ContentView: View {
                 }
             }
 
-            Section {
-                if !analyticsCollapsed {
+            Section("Analytics", isExpanded: expanded($analyticsCollapsed)) {
                     sidebarRow("Trends", icon: "chart.line.uptrend.xyaxis", destination: .trends)
                     sidebarRow("Insights", icon: "lightbulb", destination: .insights)
                     sidebarRow("Net Worth", icon: "banknote", destination: .netWorth)
                     sidebarRow("Reports", icon: "doc.text.magnifyingglass", destination: .reports)
-                }
-            } header: {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { analyticsCollapsed.toggle() }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Analytics")
-                            .font(.headline)
-                        Image(systemName: analyticsCollapsed ? "chevron.right" : "chevron.down")
-                            .font(.caption.bold())
-                    }
-                    .foregroundStyle(.primary)
-                }
-                .buttonStyle(.plain)
             }
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
 
-            Section {
-                if !scheduledCollapsed {
+            Section("Scheduled", isExpanded: expanded($scheduledCollapsed)) {
                     sidebarRow("Overview", icon: "list.bullet", destination: .scheduled)
                     sidebarRow("Subscriptions", icon: "arrow.triangle.2.circlepath", destination: .subscriptions)
                     sidebarRow("Bills", icon: "creditcard", destination: .bills)
-                }
-            } header: {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { scheduledCollapsed.toggle() }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Scheduled")
-                            .font(.headline)
-                        Image(systemName: scheduledCollapsed ? "chevron.right" : "chevron.down")
-                            .font(.caption.bold())
-                    }
-                    .foregroundStyle(.primary)
-                }
-                .buttonStyle(.plain)
             }
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
 
-            Section {
-                if !planningCollapsed {
+            Section("Planning", isExpanded: expanded($planningCollapsed)) {
                     sidebarRow("Goals", icon: "target", destination: .goals)
                     sidebarRow("Forecast", icon: "chart.line.flattrend.xyaxis", destination: .forecast)
-                }
-            } header: {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { planningCollapsed.toggle() }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Planning")
-                            .font(.headline)
-                        Image(systemName: planningCollapsed ? "chevron.right" : "chevron.down")
-                            .font(.caption.bold())
-                    }
-                    .foregroundStyle(.primary)
-                }
-                .buttonStyle(.plain)
             }
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
 
-            Section {
-                if !toolsCollapsed {
+            Section("Tools", isExpanded: expanded($toolsCollapsed)) {
                     sidebarRow("Budgets", icon: "chart.pie", destination: .budgets)
                     sidebarRow("Rules", icon: "wand.and.rays", destination: .rules)
                     sidebarRow("Tags", icon: "tag", destination: .tags)
                     sidebarRow("Import / Export", icon: "square.and.arrow.up.on.square", destination: .importExport)
                     sidebarRow("Data Health", icon: "checkmark.shield", destination: .dataHealth)
-                }
-            } header: {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) { toolsCollapsed.toggle() }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Tools")
-                            .font(.headline)
-                        Image(systemName: toolsCollapsed ? "chevron.right" : "chevron.down")
-                            .font(.caption.bold())
-                    }
-                    .foregroundStyle(.primary)
-                }
-                .buttonStyle(.plain)
             }
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
 
             Spacer()
                 .frame(height: 24)
                 .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
 
             Section {
                 SettingsLink {
@@ -382,17 +334,15 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
             }
             .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
 
         }
-        // Sidebar is a distinctly lighter panel than the true-black content,
-        // so it reads as its own region (tonal contrast, no window transparency).
-        .listStyle(.plain)
+        // Standard system sidebar — no hand-painted background, so it inherits
+        // whatever chrome the OS ships (flat in Golden Gate, vibrant before it).
+        .listStyle(.sidebar)
         .scrollContentBackground(.hidden)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 Divider()
-                    .overlay(AppTheme.divider(for: scheme).opacity(0.5))
                 HStack(spacing: 6) {
                     Image(systemName: "leaf.fill")
                         .font(.caption)
@@ -403,10 +353,8 @@ struct ContentView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
-                .background(AppTheme.sidebarBackground(for: scheme))
             }
         }
-        .background(AppTheme.sidebarBackground(for: scheme))
         .toolbar {}
         .onChange(of: tutorial.currentStepIndex) { _, _ in
             scrollToTutorialStep(proxy: proxy)
@@ -471,82 +419,70 @@ struct ContentView: View {
         return tutorialDest == destination
     }
 
-    private func sidebarRow(_ title: String, icon: String, destination: SidebarDestination) -> some View {
+    /// Inverts a stored "collapsed" flag into the "expanded" binding native sections want.
+    private func expanded(_ collapsed: Binding<Bool>) -> Binding<Bool> {
+        Binding(get: { !collapsed.wrappedValue }, set: { collapsed.wrappedValue = !$0 })
+    }
+
+    /// The label only — used where the row itself must carry the tag (e.g. Overview,
+    /// which shares its row with the notifications bell).
+    private func sidebarLabel(_ title: String, icon: String, destination: SidebarDestination) -> some View {
         let isSelected = selection == destination
-        let isTutorial = isTutorialHighlighted(destination)
-        return Button {
-            selection = destination
-        } label: {
-            HStack(spacing: 8) {
+        return Label {
+            Text(title)
+        } icon: {
+            if isSelected {
                 Image(systemName: icon)
-                    .font(.body)
-                    .frame(width: 20)
-                Text(title)
-                    .font(.body)
-                Spacer()
+            } else {
+                Image(systemName: icon)
+                    .foregroundStyle(AppTheme.accent(for: scheme))
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .contentShape(Rectangle())
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? AppTheme.accent(for: scheme).opacity(isTutorial ? 0.25 : 0.12) : .clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(
-                        isTutorial ? AppTheme.accent(for: scheme)
-                        : isSelected ? AppTheme.accent(for: scheme).opacity(0.4)
-                        : .clear,
-                        lineWidth: isTutorial ? 2.5 : 1
-                    )
-            )
-            .shadow(color: isTutorial ? AppTheme.accent(for: scheme).opacity(0.4) : .clear, radius: 6, x: 0, y: 0)
         }
-        .buttonStyle(.plain)
-        .foregroundStyle(isSelected ? AppTheme.accent(for: scheme) : .primary)
+    }
+
+    /// A plain tagged label — the system draws the selection edge-to-edge.
+    private func sidebarRow(_ title: String, icon: String, destination: SidebarDestination) -> some View {
+        let isTutorial = isTutorialHighlighted(destination)
+        let isSelected = selection == destination
+        return Label {
+            Text(title)
+        } icon: {
+            // Selected rows inherit the system's label colour so text and icon
+            // stay legible against the selection fill.
+            if isSelected {
+                Image(systemName: icon)
+            } else {
+                Image(systemName: icon)
+                    .foregroundStyle(AppTheme.accent(for: scheme))
+            }
+        }
+        .tag(destination)
         .id(destination)
+        .overlay(
+            RoundedRectangle(cornerRadius: 6)
+                .strokeBorder(isTutorial ? AppTheme.accent(for: scheme) : .clear, lineWidth: 2.5)
+        )
         .animation(.easeInOut(duration: 0.3), value: isTutorial)
     }
 
     private func sidebarAccountRow(_ account: Account) -> some View {
-        let isSelected: Bool = {
-            if case .account(let sel) = selection { return sel.id == account.id }
-            return false
-        }()
-
-        return Button {
-            selection = .account(account)
-        } label: {
-            HStack(spacing: 8) {
-                Image(systemName: account.type.icon)
-                    .font(.caption)
-                    .foregroundStyle(Color(hex: account.colorHex))
-                    .frame(width: 22, height: 22)
-                    .background(Color(hex: account.colorHex).opacity(0.15))
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(account.name)
-                        .font(.body)
-                    Text(CurrencyFormatter.shared.format(account.currentBalance, currency: account.currency))
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-                Spacer()
+        Label {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(account.name)
+                Text(CurrencyFormatter.shared.format(account.currentBalance, currency: account.currency))
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .contentShape(Rectangle())
-            .background(
-                RoundedRectangle(cornerRadius: 6)
-                    .fill(isSelected ? AppTheme.accent(for: scheme).opacity(0.12) : .clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6)
-                    .strokeBorder(isSelected ? AppTheme.accent(for: scheme).opacity(0.4) : .clear, lineWidth: 1)
-            )
+            .padding(.vertical, 3)
+        } icon: {
+            if selection == .account(account) {
+                Image(systemName: account.type.icon)
+            } else {
+                Image(systemName: account.type.icon)
+                    .foregroundStyle(Color(hex: account.colorHex))
+            }
         }
-        .buttonStyle(.plain)
+        .tag(SidebarDestination.account(account))
         .contextMenu {
             Button {
                 editingAccount = account
