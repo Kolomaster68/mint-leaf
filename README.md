@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.1.0-gold" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.2.0-gold" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20iOS-blue" alt="Platform">
   <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift">
   <img src="https://img.shields.io/badge/swiftui-5.0-purple" alt="SwiftUI">
@@ -38,6 +38,15 @@
 <p align="center">
   <img src="screenshots/tutorial-overview-dark.png" width="800" alt="Mint Leaf Dashboard">
 </p>
+
+## What's New in v4.2
+
+- **Golden Gate Sidebar** — Rebuilt flat and integrated: the sidebar now shares one continuous background with the content instead of sitting on a raised panel, with native edge-to-edge selection and system disclosure sections
+- **Monochrome Accent Icons** — Sidebar icons follow your chosen accent (gold or silver), staying legible when a row is selected
+- **Flatter Surfaces** — Card elevation and shadows reduced in line with Golden Gate's flatter direction
+- **Sidebar Toggle** — Hide or show the sidebar with `Cmd`+`\`, remembered between launches
+- **Clearer Account Balances** — Larger monospaced figures and more room between rows
+- **Test Suite** — An XCTest target covering the money-critical paths: balance recalculation, transfer pairing, statement boundaries, backup round-trips, recurrence and FX
 
 ## What's New in v4.1
 
