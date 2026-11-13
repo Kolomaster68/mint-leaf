@@ -157,9 +157,12 @@ struct ContentView: View {
             }
             .tabItem { Label("Settings", systemImage: "gear") }
         }
+        // 630P1-Test-Scheduled-Transactions
         .onAppear {
-            seedIfNeeded()
+            guard !MintLeafApp.isRunningTests else { return }
             Task { await ExchangeRateService.shared.refresh() }
+            seedIfNeeded()
+            ScheduledTransactionProcessor.processOverdue(context: context)
         }
         #endif
     }
