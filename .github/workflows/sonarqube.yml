@@ -1,0 +1,36 @@
+name: MintLeaf Tests and Coverage
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Run MintLeaf tests with coverage
+        run: |
+          mkdir -p build
+
+          xcodebuild test \
+            -project MintLeaf.xcodeproj \
+            -scheme MintLeaf_macOS \
+            -destination 'platform=macOS' \
+            -enableCodeCoverage YES \
+            -resultBundlePath build/MintLeafTests.xcresult
+
+      - name: Display coverage summary
+        run: |
+          xcrun xccov view \
+            --report build/MintLeafTests.xcresult
