@@ -28,7 +28,9 @@ jobs:
             -scheme MintLeaf_macOS \
             -destination 'platform=macOS' \
             -enableCodeCoverage YES \
-            -resultBundlePath build/MintLeafTests.xcresult
+            -resultBundlePath build/MintLeafTests.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
 
       - name: Display coverage summary
         run: |
