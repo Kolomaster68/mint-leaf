@@ -32,6 +32,12 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
+      - name: Convert Xcode coverage for SonarQube
+        run: |
+          scripts/xccov-to-sonarqube-generic.sh \
+            build/MintLeafTests.xcresult \
+            > build/sonarqube-coverage.xml
+
       - name: Display coverage summary
         run: |
           xcrun xccov view \
