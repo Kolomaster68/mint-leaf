@@ -1,4 +1,4 @@
-name: MintLeaf Tests and Coverage
+name: MintLeaf Tests, Coverage and SonarQube
 
 on:
   workflow_dispatch:
@@ -16,6 +16,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -53,3 +55,20 @@ jobs:
         run: |
           xcrun xccov view \
             --report build/MintLeafTests.xcresult
+
+      - name: Show generated coverage files
+        run: |
+          find build -maxdepth 2 -type f -name "*.xml" -print
+
+      - name: SonarQube Cloud Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=cgcazares1_mint-leaf
+            -Dsonar.organization=cgcazares1-1
+            -Dsonar.host.url=https://sonarcloud.io
+            -Dsonar.sources=MintLeaf
+            -Dsonar.tests=MintLeafTests
+            -Dsonar.coverageReportPaths=build/sonarqube-generic-coverage.xml
