@@ -281,7 +281,7 @@ struct ExcelImportView: View {
             .replacingOccurrences(of: "€", with: "")
             .replacingOccurrences(of: ",", with: "")
             .trimmingCharacters(in: .whitespaces)
-        let amount = Decimal(string: cleaned) ?? 0
+        let amount = Decimal(userInput: cleaned) ?? 0
 
         return ParsedRow(date: date, title: title, amount: amount)
     }
@@ -309,7 +309,7 @@ struct ExcelImportView: View {
 
     private func performImport() {
         let rows = dataRows
-        let existingTransactions = account.transactions
+        var duplicatePool = account.transactions
         var imported = 0
         var duplicates = 0
         var skipped = 0
@@ -334,11 +334,7 @@ struct ExcelImportView: View {
 
             // Duplicate detection
             if detectDuplicates {
-                let dupes = DuplicateDetector.findDuplicates(
-                    incoming: [transaction],
-                    existing: existingTransactions
-                )
-                if !dupes.isEmpty {
+                if DuplicateDetector.consumeDuplicate(of: transaction, in: &duplicatePool) {
                     duplicates += 1
                     continue
                 }

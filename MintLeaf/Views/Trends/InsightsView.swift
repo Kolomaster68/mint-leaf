@@ -12,7 +12,7 @@ struct InsightsView: View {
     }
 
     private var totalBalance: Decimal {
-        accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.currentBalance }
+        accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.convertedBalance }
     }
 
     var body: some View {

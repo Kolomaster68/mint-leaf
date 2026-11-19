@@ -33,7 +33,9 @@ final class CSVImporter {
     static let supportedTypes: [UTType] = [.commaSeparatedText, UTType(filenameExtension: "ofx"), UTType(filenameExtension: "qif")].compactMap { $0 }
 
     static func parseCSV(from url: URL) throws -> (headers: [String], rows: [[String]]) {
-        let content = try String(contentsOf: url, encoding: .utf8)
+        // Bank exports are often Windows-1252 (a lone £ breaks UTF-8), sometimes with a BOM.
+        var content = try (try? String(contentsOf: url, encoding: .utf8)) ?? String(contentsOf: url, encoding: .windowsCP1252)
+        if content.hasPrefix("\u{FEFF}") { content.removeFirst() }
         let lines = content.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
         guard lines.count > 1 else { throw ImportError.emptyFile }
 
@@ -78,7 +80,7 @@ final class CSVImporter {
         var skipped = 0
         var duplicatesDetected = 0
         var errors: [String] = []
-        let existingTransactions = account.transactions
+        var duplicatePool = account.transactions
 
         let dateFormatter = DateFormatter()
         dateFormatter.locale = Locale(identifier: "en_US_POSIX")
@@ -114,7 +116,7 @@ final class CSVImporter {
                             .replacingOccurrences(of: "£", with: "")
                             .replacingOccurrences(of: "€", with: "")
                             .replacingOccurrences(of: ",", with: "")
-                        guard let d = Decimal(string: cleaned) else {
+                        guard let d = Decimal(userInput: cleaned) else {
                             throw ImportError.invalidAmount(row: index + 2, value: value)
                         }
                         amount = d
@@ -124,14 +126,14 @@ final class CSVImporter {
                             .replacingOccurrences(of: "£", with: "")
                             .replacingOccurrences(of: "€", with: "")
                             .replacingOccurrences(of: ",", with: "")
-                        if !cleaned.isEmpty { debit = Decimal(string: cleaned) }
+                        if !cleaned.isEmpty { debit = Decimal(userInput: cleaned) }
                     case .credit:
                         let cleaned = value
                             .replacingOccurrences(of: "$", with: "")
                             .replacingOccurrences(of: "£", with: "")
                             .replacingOccurrences(of: "€", with: "")
                             .replacingOccurrences(of: ",", with: "")
-                        if !cleaned.isEmpty { credit = Decimal(string: cleaned) }
+                        if !cleaned.isEmpty { credit = Decimal(userInput: cleaned) }
                     case .title:
                         title = value
                     case .notes:
@@ -154,8 +156,7 @@ final class CSVImporter {
                 // "skipped" duplicates were quietly imported anyway.
                 let candidate = Transaction(amount: amount, title: title, date: date, notes: notes)
                 if detectDuplicates {
-                    let dupes = DuplicateDetector.findDuplicates(incoming: [candidate], existing: existingTransactions)
-                    if !dupes.isEmpty {
+                    if DuplicateDetector.consumeDuplicate(of: candidate, in: &duplicatePool) {
                         duplicatesDetected += 1
                         continue
                     }

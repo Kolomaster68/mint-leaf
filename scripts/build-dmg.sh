@@ -6,7 +6,9 @@ APP_NAME="Mint Leaf"
 SCHEME="MintLeaf_macOS"
 PROJECT="MintLeaf.xcodeproj"
 BUILD_DIR="build"
-DMG_NAME="MintLeaf-v2.1.2"
+# Named from the app's version, e.g. 4.3.0 → MintLeaf-v4.3.dmg
+VERSION=$(grep -m1 "MARKETING_VERSION" "$(dirname "$0")/../MintLeaf.xcodeproj/project.pbxproj" | sed -E 's/.*= ([0-9]+\.[0-9]+)(\.0)?.*/\1/')
+DMG_NAME="MintLeaf-v$VERSION"
 VOLUME_NAME="Mint Leaf"
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

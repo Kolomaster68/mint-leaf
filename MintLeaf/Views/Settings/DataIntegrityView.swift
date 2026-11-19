@@ -45,7 +45,9 @@ struct DataIntegrityView: View {
     }
 
     private var issueCount: Int {
-        balanceDriftAccounts.count + (duplicateExtraCount > 0 ? 1 : 0) + (orphanTransactions.isEmpty ? 0 : 1)
+        // Look-alikes aren't counted: two identical fares on one day are usually real,
+        // and counting them left this screen permanently reporting a problem.
+        balanceDriftAccounts.count + (orphanTransactions.isEmpty ? 0 : 1)
     }
 
     var body: some View {
@@ -121,8 +123,15 @@ struct DataIntegrityView: View {
                          detail: "No repeated transactions with the same date, amount and payee.")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    checkRow(ok: false, title: "\(duplicateExtraCount) possible duplicate\(duplicateExtraCount == 1 ? "" : "s")",
-                             detail: "Transactions sharing the same account, date, amount and payee. Keeping the first of each, the rest can be removed.")
+                    checkRow(ok: true, title: "\(duplicateExtraCount) look-alike transaction\(duplicateExtraCount == 1 ? "" : "s") to review",
+                             detail: "Same account, date, amount and payee. Often genuine (two identical fares in a day) — only remove them if your balance is higher or lower than the bank's by these amounts.")
+                    ForEach(duplicateGroups.prefix(8), id: \.first?.id) { group in
+                        if let first = group.first {
+                            Text("\(group.count)× \(first.title) · \(CurrencyFormatter.shared.format(first.amount, currency: first.account?.currency)) · \(first.date.formatted(date: .abbreviated, time: .omitted))")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                     Button("Remove \(duplicateExtraCount) duplicate\(duplicateExtraCount == 1 ? "" : "s")", role: .destructive) {
                         removeDuplicates()
                     }

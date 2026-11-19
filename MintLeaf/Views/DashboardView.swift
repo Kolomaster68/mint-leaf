@@ -4,6 +4,7 @@ import SwiftData
 // MARK: - Dashboard Card Definitions
 
 enum DashboardCard: String, CaseIterable, Identifiable, Codable {
+    case payday = "Left Until Payday"
     case heroBalance = "Net Worth"
     case creditCardDue = "Credit Card Payments"
     case financialHealth = "Financial Health"
@@ -16,6 +17,7 @@ enum DashboardCard: String, CaseIterable, Identifiable, Codable {
 
     var icon: String {
         switch self {
+        case .payday: return "calendar.badge.checkmark"
         case .heroBalance: return "banknote"
         case .creditCardDue: return "creditcard"
         case .summaryCards: return "arrow.up.arrow.down"
@@ -44,8 +46,12 @@ final class DashboardConfig {
         // Load from UserDefaults
         if let data = UserDefaults.standard.data(forKey: orderKey),
            let decoded = try? JSONDecoder().decode([DashboardCard].self, from: data) {
-            let missing = DashboardCard.allCases.filter { !decoded.contains($0) }
-            self.cardOrder = decoded + missing
+            // New cards slot in at their default position rather than the bottom.
+            var order = decoded
+            for (index, card) in DashboardCard.allCases.enumerated() where !order.contains(card) {
+                order.insert(card, at: min(index, order.count))
+            }
+            self.cardOrder = order
         } else {
             self.cardOrder = DashboardCard.allCases
         }
@@ -79,6 +85,7 @@ final class DashboardConfig {
 
 struct DashboardView: View {
     @Environment(\.colorScheme) private var scheme
+    @Environment(\.modelContext) private var context
     @Query(sort: \Account.sortOrder) private var accounts: [Account]
     @Query(sort: \Transaction.date, order: .reverse) private var allTransactions: [Transaction]
     @Query(sort: \ScheduledTransaction.nextDate) private var scheduledTransactions: [ScheduledTransaction]
@@ -103,7 +110,7 @@ struct DashboardView: View {
     }
 
     private var totalBalance: Decimal {
-        accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.currentBalance }
+        accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.convertedBalance }
     }
 
     private var monthIncome: Decimal {
@@ -150,6 +157,11 @@ struct DashboardView: View {
                         .transition(.opacity.combined(with: .scale(scale: 0.97)))
                 }
 
+                ForEach(likelyCancelled) { item in
+                    cancelledBanner(item)
+                        .transition(.opacity.combined(with: .scale(scale: 0.97)))
+                }
+
                 // When a credit card payment is urgent, float it to the very top
                 // regardless of the user's saved order, with an attention border.
                 if hasUrgentCreditCardPayment && config.isVisible(.creditCardDue) {
@@ -193,6 +205,8 @@ struct DashboardView: View {
     @ViewBuilder
     private func cardView(for card: DashboardCard) -> some View {
         switch card {
+        case .payday:
+            paydayCard
         case .heroBalance:
             heroBalance
         case .creditCardDue:
@@ -216,12 +230,90 @@ struct DashboardView: View {
         }
     }
 
+    // MARK: Left until payday
+
+    private var paydayCard: some View {
+        let p = CashflowForecaster.untilPayday(accounts: accounts, scheduled: scheduledTransactions)
+        let days = p.payday.map { max(0, Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: Date()), to: Calendar.current.startOfDay(for: $0)).day ?? 0) }
+        return HStack(alignment: .center, spacing: 16) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(p.payday == nil ? "Left until month end" : "Left until payday")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(AppTheme.accent(for: scheme))
+                Text(CurrencyFormatter.shared.format(p.left))
+                    .font(.system(size: 32, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(p.left < 0 ? AppTheme.expense : .primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text("After \(CurrencyFormatter.shared.format(p.bills)) of bills still to come")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 4) {
+                if let payday = p.payday, let days {
+                    Text(days == 0 ? "Today" : "\(days) day\(days == 1 ? "" : "s")")
+                        .font(.title3.bold().monospacedDigit())
+                    Text(payday, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if days > 0 {
+                        Text("\(CurrencyFormatter.shared.format(p.left / Decimal(days))) a day")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(AppTheme.accent(for: scheme))
+                    }
+                } else {
+                    Text("Add your income as a\nscheduled item to count\nto your real payday")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+        }
+        .premiumCard()
+    }
+
+    // MARK: Cancelled subscriptions
+
+    private var likelyCancelled: [ScheduledTransaction] {
+        ScheduledTransactionProcessor.likelyCancelled(scheduledTransactions)
+    }
+
+    private func cancelledBanner(_ item: ScheduledTransaction) -> some View {
+        let ghosts = ScheduledTransactionProcessor.ghostCharges(of: item)
+        let total = ghosts.reduce(Decimal.zero) { $0 + abs($1.amount) }
+        return HStack(spacing: 12) {
+            Image(systemName: "questionmark.circle.fill")
+                .font(.title2)
+                .foregroundStyle(AppTheme.warning)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(item.title) looks cancelled")
+                    .font(.subheadline.weight(.semibold))
+                Text("The last \(ghosts.count) charges (\(CurrencyFormatter.shared.format(total))) never showed up in your bank imports.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Keep") {
+                withAnimation { ScheduledTransactionProcessor.keep(item) }
+            }
+            .help("It's still active — maybe the price changed. Accept these charges.")
+            Button("Stop & Remove") {
+                withAnimation { ScheduledTransactionProcessor.stop(item, context: context) }
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.warning)
+            .help("Stop the schedule and delete the charges that never happened. ⌘Z undoes it.")
+        }
+        .premiumCard()
+    }
+
     private var totalAssets: Decimal {
-        accounts.filter { !$0.isArchived && $0.currentBalance > 0 }.reduce(Decimal.zero) { $0 + $1.currentBalance }
+        accounts.filter { !$0.isArchived && $0.currentBalance > 0 }.reduce(Decimal.zero) { $0 + $1.convertedBalance }
     }
 
     private var totalLiabilities: Decimal {
-        accounts.filter { !$0.isArchived && $0.currentBalance < 0 }.reduce(Decimal.zero) { $0 + abs($1.currentBalance) }
+        accounts.filter { !$0.isArchived && $0.currentBalance < 0 }.reduce(Decimal.zero) { $0 + abs($1.convertedBalance) }
     }
 
     private var heroBalance: some View {
@@ -487,7 +579,7 @@ struct DashboardView: View {
         let today = cal.startOfDay(for: Date())
         return creditCardsWithCycle.contains { card in
             guard card.statementBalance > 0, !card.statementSettled,
-                  let due = card.nextPaymentDueDate() else { return false }
+                  let due = card.statementDueDate() else { return false }
             let days = cal.dateComponents([.day], from: today, to: cal.startOfDay(for: due)).day ?? 99
             return days <= 5
         }
@@ -502,7 +594,7 @@ struct DashboardView: View {
             }
 
             ForEach(creditCardsWithCycle) { card in
-                let due = card.nextPaymentDueDate()
+                let due = card.statementDueDate()
                 let statementBal = card.statementBalance
                 let settled = card.statementSettled && statementBal > 0
                 let partial = card.statementPartiallyPaid

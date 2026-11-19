@@ -41,6 +41,13 @@ final class Account {
         cachedBalance
     }
 
+    /// Balance converted to the user's display currency. Totals across accounts must
+    /// use this — adding a USD balance to a GBP one as raw numbers is meaningless.
+    var convertedBalance: Decimal {
+        ExchangeRateService.shared.convert(currentBalance, from: currency,
+                                           to: ExchangeRateService.shared.preferredCurrency)
+    }
+
     func recalculateBalance() {
         cachedBalance = initialBalance + transactions.reduce(Decimal.zero) { $0 + $1.amount }
     }
@@ -71,25 +78,12 @@ final class Account {
         return previousStatement(from: thisMonth)
     }
 
-    /// The next statement (closing) date strictly after `reference`.
-    func nextStatementDate(after reference: Date = Date()) -> Date? {
-        guard let last = lastStatementDate(before: reference) else { return nil }
-        return nextStatement(from: last)
-    }
-
-    /// The next payment due date after `reference`.
-    /// Uses a fixed `paymentDueDay` when set, otherwise statement date + offset.
-    func nextPaymentDueDate(after reference: Date = Date()) -> Date? {
-        guard statementDay != nil else { return nil }
-        let cal = Calendar.current
-        guard var statement = lastStatementDate(before: reference) else { return nil }
-
-        for _ in 0..<3 {
-            if let due = dueDate(forStatement: statement), due >= cal.startOfDay(for: reference) {
-                return due
-            }
-            statement = nextStatement(from: statement)
-        }
+    /// Due date of the most recently cut statement — the one `statementBalance`
+    /// describes. It can be in the past: an unpaid statement past this date is overdue.
+    /// (This used to walk forward to the next *future* due date, which paired last
+    /// month's balance with next month's deadline and made "overdue" unreachable.)
+    func statementDueDate(asOf reference: Date = Date()) -> Date? {
+        guard let statement = lastStatementDate(before: reference) else { return nil }
         return dueDate(forStatement: statement)
     }
 
@@ -97,41 +91,53 @@ final class Account {
     private func dueDate(forStatement statement: Date) -> Date? {
         let cal = Calendar.current
         if let fixedDay = paymentDueDay {
-            // Fixed day of month. The due day usually falls in the month *after* the statement.
-            guard let nextMonth = cal.date(byAdding: .month, value: 1, to: statement) else { return nil }
-            var comps = cal.dateComponents([.year, .month], from: nextMonth)
+            // First occurrence of the fixed day at least two weeks after the statement:
+            // statement 15th / due 9th lands next month, statement 2nd / due 27th the
+            // same month. ponytail: 14 days is a heuristic floor — no card gives less.
+            guard let earliest = cal.date(byAdding: .day, value: 14, to: statement) else { return nil }
+            var comps = cal.dateComponents([.year, .month], from: earliest)
             comps.day = clampDay(fixedDay, year: comps.year!, month: comps.month!)
-            return cal.date(from: comps)
+            guard let candidate = cal.date(from: comps) else { return nil }
+            if candidate >= earliest { return candidate }
+            guard let nextMonth = cal.date(byAdding: .month, value: 1, to: candidate) else { return nil }
+            var next = cal.dateComponents([.year, .month], from: nextMonth)
+            next.day = clampDay(fixedDay, year: next.year!, month: next.month!)
+            return cal.date(from: next)
         } else {
             let offset = paymentDueOffsetDays ?? 21
             return cal.date(byAdding: .day, value: offset, to: statement)
         }
     }
 
-    /// Statement balance: the amount billed in the most recently closed cycle (what's due next).
-    /// Sum of transactions strictly after the previous statement date, up to and including the last statement date.
-    var statementBalance: Decimal {
-        guard let lastStatement = lastStatementDate() else { return 0 }
-        let prevStatement = previousStatement(from: lastStatement)
+    /// First instant after the statement day — everything before it is billed.
+    private func statementCloseEnd(_ statement: Date) -> Date {
         let cal = Calendar.current
-        // Strictly before the day after the statement date, so a midnight-dated txn
-        // (what CSV/OFX imports produce) can't land in both billed and unbilled.
-        let billed = transactions.filter { txn in
-            let d = txn.date
-            return d > prevStatement && d < cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: lastStatement))!
-        }
-        // Statement balance is what you OWE: negative of the net spend on the card.
-        let net = billed.reduce(Decimal.zero) { $0 + $1.amount }
-        return -net
+        return cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: statement)) ?? statement
     }
 
-    /// Unbilled balance: spending since the last statement that rolls into the next bill.
+    /// Statement balance: what the card owed at the moment the last statement was cut —
+    /// i.e. minus the account balance at close, exactly what the paper statement prints.
+    ///
+    /// It is NOT the net of one cycle's transactions: the payment for the *previous*
+    /// statement lands inside the cycle, so netting a single window cancels it against
+    /// this cycle's spending and reports almost nothing owed.
+    var statementBalance: Decimal {
+        guard let lastStatement = lastStatementDate() else { return 0 }
+        let closeEnd = statementCloseEnd(lastStatement)
+        let balanceAtClose = initialBalance + transactions
+            .filter { $0.date < closeEnd }
+            .reduce(Decimal.zero) { $0 + $1.amount }
+        return -balanceAtClose
+    }
+
+    /// Unbilled balance: purchases since the last statement that roll into the next bill.
+    /// Credits since then are payments (see `paymentsSinceStatement`), not negative spend.
     var unbilledBalance: Decimal {
         guard let lastStatement = lastStatementDate() else { return 0 }
-        let cal = Calendar.current
-        let after = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: lastStatement))!
-        let net = transactions.filter { $0.date >= after }.reduce(Decimal.zero) { $0 + $1.amount }
-        return -net
+        let closeEnd = statementCloseEnd(lastStatement)
+        return -transactions
+            .filter { $0.date >= closeEnd && $0.amount < 0 }
+            .reduce(Decimal.zero) { $0 + $1.amount }
     }
 
     // MARK: - Statement Payment Reconciliation
@@ -140,10 +146,9 @@ final class Account {
     /// A payment is any positive-amount transaction posted after the statement date.
     var paymentsSinceStatement: Decimal {
         guard let lastStatement = lastStatementDate() else { return 0 }
-        let cal = Calendar.current
-        let after = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: lastStatement))!
+        let closeEnd = statementCloseEnd(lastStatement)
         return transactions
-            .filter { $0.date >= after && $0.amount > 0 }
+            .filter { $0.date >= closeEnd && $0.amount > 0 }
             .reduce(Decimal.zero) { $0 + $1.amount }
     }
 
@@ -183,15 +188,6 @@ final class Account {
         return cal.date(from: comps) ?? date
     }
 
-    private func nextStatement(from date: Date) -> Date {
-        let cal = Calendar.current
-        guard let day = statementDay,
-              let nextMonth = cal.date(byAdding: .month, value: 1, to: date) else { return date }
-        var comps = cal.dateComponents([.year, .month], from: nextMonth)
-        comps.day = clampDay(day, year: comps.year!, month: comps.month!)
-        return cal.date(from: comps) ?? date
-    }
-
     // MARK: - Projected Balance
 
     /// Projects this account's balance forward to `date`, applying any active
@@ -208,9 +204,9 @@ final class Account {
             while occurrence <= date && guardCount < 500 {
                 if occurrence > now {
                     if let end = sched.endDate, occurrence > end { break }
-                    balance += sched.amount
+                    balance += ExchangeRateService.shared.convert(sched.amount, from: sched.currency, to: currency)
                 }
-                occurrence = sched.frequency.advance(occurrence)
+                occurrence = sched.advance(occurrence)
                 guardCount += 1
             }
         }

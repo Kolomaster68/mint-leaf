@@ -78,6 +78,7 @@ struct MintLeafBackup: Codable {
         var period: String
         var startDate: Date
         var createdAt: Date
+        var rollover: Bool?
     }
 
     struct BudgetItemDTO: Codable {
@@ -100,6 +101,7 @@ struct MintLeafBackup: Codable {
         var currency: String
         var accountID: UUID?
         var categoryID: UUID?
+        var anchorDay: Int?
     }
 
     struct RuleDTO: Codable {
@@ -209,7 +211,7 @@ enum BackupManager {
                       scheduledSourceID: t.scheduledSource?.id, tagIDs: t.tags.map(\.id))
             },
             budgets: budgets.map { b in
-                .init(id: b.id, name: b.name, period: b.period.rawValue, startDate: b.startDate, createdAt: b.createdAt)
+                .init(id: b.id, name: b.name, period: b.period.rawValue, startDate: b.startDate, createdAt: b.createdAt, rollover: b.rollover)
             },
             budgetItems: budgetItems.map { i in
                 .init(id: i.id, amount: i.amount, categoryID: i.category?.id, budgetID: i.budget?.id)
@@ -218,7 +220,7 @@ enum BackupManager {
                 .init(id: s.id, amount: s.amount, title: s.title, notes: s.notes,
                       frequency: s.frequency.rawValue, nextDate: s.nextDate, endDate: s.endDate,
                       isActive: s.isActive, isSubscription: s.isSubscription, currency: s.currency,
-                      accountID: s.account?.id, categoryID: s.category?.id)
+                      accountID: s.account?.id, categoryID: s.category?.id, anchorDay: s.anchorDay)
             },
             rules: rules.map { r in
                 .init(id: r.id, pattern: r.pattern, matchType: r.matchType.rawValue,
@@ -313,6 +315,7 @@ enum BackupManager {
                            startDate: dto.startDate)
             b.id = dto.id
             b.createdAt = dto.createdAt
+            b.rollover = dto.rollover ?? false
             context.insert(b)
             budgetsByID[dto.id] = b
         }
@@ -325,6 +328,7 @@ enum BackupManager {
                                          currency: dto.currency)
             s.id = dto.id
             s.notes = dto.notes
+            s.anchorDay = dto.anchorDay ?? s.anchorDay
             s.endDate = dto.endDate
             s.isActive = dto.isActive
             context.insert(s)

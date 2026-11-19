@@ -131,7 +131,7 @@ final class NotificationManager {
                             icon: "exclamationmark.triangle.fill",
                             iconColor: .red,
                             title: "\(category.name) budget exceeded",
-                            message: "Spent \(CurrencyFormatter.shared.format(item.spent)) of \(CurrencyFormatter.shared.format(item.amount)) budget",
+                            message: "Spent \(CurrencyFormatter.shared.format(item.spent)) of \(CurrencyFormatter.shared.format(item.available)) budget",
                             date: nil,
                             priority: .high,
                             category: .budgets
@@ -142,7 +142,7 @@ final class NotificationManager {
                             icon: "chart.pie.fill",
                             iconColor: .orange,
                             title: "\(category.name) budget at \(Int(item.progress * 100))%",
-                            message: "\(CurrencyFormatter.shared.format(item.remaining)) remaining of \(CurrencyFormatter.shared.format(item.amount))",
+                            message: "\(CurrencyFormatter.shared.format(item.remaining)) remaining of \(CurrencyFormatter.shared.format(item.available))",
                             date: nil,
                             priority: .medium,
                             category: .budgets
@@ -341,7 +341,7 @@ final class NotificationManager {
 
         let statementBalance = card.statementBalance
         guard statementBalance > 0 else { return result } // nothing owed → nothing to chase
-        guard let dueDate = card.nextPaymentDueDate() else { return result }
+        guard let dueDate = card.statementDueDate() else { return result }
 
         let cycleKey0 = Self.cycleKey(for: dueDate)
 

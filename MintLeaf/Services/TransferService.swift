@@ -18,9 +18,10 @@ enum TransferService {
         }
 
         // Legacy fallback: opposite amount, same day, pointing back at this account.
+        guard let sourceID = txn.account?.id else { return nil }
         return dest.transactions.first { candidate in
             candidate.id != txn.id &&
-            candidate.transferDestination?.id == txn.account?.id &&
+            candidate.transferDestination?.id == sourceID &&
             candidate.amount == -txn.amount &&
             Calendar.current.isDate(candidate.date, inSameDayAs: txn.date)
         }

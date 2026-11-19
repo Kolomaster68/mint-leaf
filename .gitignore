@@ -21,3 +21,6 @@ Package.resolved
 .DS_Store
 *.swp
 *~.nib
+
+# Personal data backups — never commit
+Screenshots & store backup/

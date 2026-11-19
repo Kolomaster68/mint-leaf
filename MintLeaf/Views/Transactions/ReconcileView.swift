@@ -24,7 +24,7 @@ struct ReconcileView: View {
     }
 
     private var difference: Decimal {
-        let target = Decimal(string: statementBalance) ?? 0
+        let target = Decimal(userInput: statementBalance) ?? 0
         return target - checkedBalance
     }
 

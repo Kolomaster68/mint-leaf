@@ -15,6 +15,7 @@ struct ImportExportView: View {
     @State private var showingExcelImport = false
     @State private var showingExporter = false
     @State private var selectedAccountForImport: Account?
+    @AppStorage("lastImportAccountID") private var lastImportAccountID = ""
     @State private var importType: ImportType?
     @State private var csvContent = ""
     @State private var exportScope: ExportScope = .all
@@ -100,8 +101,8 @@ struct ImportExportView: View {
             defaultFilename: "MintLeaf-Export-\(exportDateString).csv"
         ) { _ in }
         .onAppear {
-            if selectedAccountForImport == nil, let first = accounts.first {
-                selectedAccountForImport = first
+            if selectedAccountForImport == nil {
+                selectedAccountForImport = accounts.first { $0.id.uuidString == lastImportAccountID } ?? accounts.first
             }
         }
     }
@@ -193,6 +194,7 @@ struct ImportExportView: View {
     private func accountChip(_ account: Account) -> some View {
         Button {
             selectedAccountForImport = account
+            lastImportAccountID = account.id.uuidString
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: account.icon)

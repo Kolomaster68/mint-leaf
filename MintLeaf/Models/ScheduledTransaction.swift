@@ -13,6 +13,9 @@ final class ScheduledTransaction {
     var isActive: Bool
     var isSubscription: Bool
     var currency: String = "USD"
+    /// Day of month the schedule is meant to land on. `nextDate` alone loses it:
+    /// 31 Jan + 1 month = 28 Feb, and every month after that stays on the 28th.
+    var anchorDay: Int?
 
     @Relationship
     var account: Account?
@@ -37,6 +40,19 @@ final class ScheduledTransaction {
 
     var yearlyEquivalent: Decimal {
         monthlyEquivalent * 12
+    }
+
+    /// Next occurrence after `date`, snapping month-based schedules back to the
+    /// anchor day (clamped to short months) so the 31st never drifts to the 28th.
+    func advance(_ date: Date) -> Date {
+        let next = frequency.advance(date)
+        guard [.monthly, .quarterly, .yearly].contains(frequency) else { return next }
+        let cal = Calendar.current
+        let anchor = anchorDay ?? cal.component(.day, from: nextDate)
+        let days = cal.range(of: .day, in: .month, for: next)?.count ?? 28
+        var parts = cal.dateComponents([.year, .month, .day, .hour, .minute, .second], from: next)
+        parts.day = min(anchor, days)
+        return cal.date(from: parts) ?? next
     }
 
     /// Amount converted to the user's preferred currency
@@ -65,6 +81,7 @@ final class ScheduledTransaction {
         self.notes = ""
         self.frequency = frequency
         self.nextDate = nextDate
+        self.anchorDay = Calendar.current.component(.day, from: nextDate)
         self.isActive = true
         self.isSubscription = isSubscription
         self.currency = currency ?? UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"

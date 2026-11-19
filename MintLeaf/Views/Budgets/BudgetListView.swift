@@ -2,6 +2,12 @@ import SwiftUI
 import SwiftData
 
 struct BudgetListView: View {
+    static func periodLabel(_ window: (start: Date, end: Date)) -> String {
+        let lastDay = Calendar.current.date(byAdding: .day, value: -1, to: window.end) ?? window.end
+        let style = Date.FormatStyle().day().month(.abbreviated)
+        return "\(window.start.formatted(style)) – \(lastDay.formatted(style))"
+    }
+
     @Environment(\.modelContext) private var context
     @Query(sort: \Budget.createdAt, order: .reverse) private var budgets: [Budget]
     @State private var showingNewBudget = false
@@ -35,13 +41,17 @@ struct BudgetListView: View {
                                 .background(.secondary.opacity(0.15))
                                 .clipShape(Capsule())
                         }
-                        BudgetProgressBar(spent: budget.totalSpent, total: budget.totalBudgeted)
+                        // Which period the figures below cover — budgets roll over.
+                        Text(Self.periodLabel(budget.currentPeriod()))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                        BudgetProgressBar(spent: budget.totalSpent, total: budget.totalAvailable)
                         HStack {
                             Text(CurrencyFormatter.shared.format(budget.totalSpent) + " spent")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             Spacer()
-                            Text(CurrencyFormatter.shared.format(budget.totalBudgeted) + " budgeted")
+                            Text(CurrencyFormatter.shared.format(budget.totalAvailable) + (budget.rollover ? " available" : " budgeted"))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -135,6 +145,7 @@ struct BudgetListView: View {
 
     private func duplicateBudget(_ source: Budget) {
         let newBudget = Budget(name: "\(source.name) Copy", period: source.period, startDate: source.startDate)
+        newBudget.rollover = source.rollover
         context.insert(newBudget)
         for item in source.items {
             let newItem = BudgetItem(amount: item.amount, category: item.category, budget: newBudget)

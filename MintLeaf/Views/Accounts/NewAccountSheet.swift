@@ -320,16 +320,16 @@ struct NewAccountSheet: View {
         let useFixedDay = cycleActive && paymentMode == .fixedDay
         let isCurrentLike = type == .checking || type == .savings
         let overdraftValue: Decimal? = isCurrentLike
-            ? (overdraftLimit.isEmpty ? nil : Decimal(string: overdraftLimit))
+            ? (overdraftLimit.isEmpty ? nil : Decimal(userInput: overdraftLimit))
             : nil
-        let earValue: Decimal? = isCurrentLike && !overdraftEAR.isEmpty ? Decimal(string: overdraftEAR) : nil
-        let unarrangedValue: Decimal? = isCurrentLike && !unarrangedFee.isEmpty ? Decimal(string: unarrangedFee) : nil
-        let aprValue: Decimal? = type == .creditCard && !purchaseAPR.isEmpty ? Decimal(string: purchaseAPR) : nil
+        let earValue: Decimal? = isCurrentLike && !overdraftEAR.isEmpty ? Decimal(userInput: overdraftEAR) : nil
+        let unarrangedValue: Decimal? = isCurrentLike && !unarrangedFee.isEmpty ? Decimal(userInput: unarrangedFee) : nil
+        let aprValue: Decimal? = type == .creditCard && !purchaseAPR.isEmpty ? Decimal(userInput: purchaseAPR) : nil
         if let account {
             account.name = name
             account.type = type
             account.currency = currency
-            account.initialBalance = Decimal(string: initialBalance) ?? account.initialBalance
+            account.initialBalance = Decimal(userInput: initialBalance) ?? account.initialBalance
             account.colorHex = colorHex
             account.icon = type.icon
             account.statementDay = cycleActive ? statementDay : nil
@@ -341,7 +341,7 @@ struct NewAccountSheet: View {
             account.unarrangedOverdraftFee = unarrangedValue
             account.purchaseAPR = aprValue
         } else {
-            let balance = Decimal(string: initialBalance) ?? 0
+            let balance = Decimal(userInput: initialBalance) ?? 0
             let newAccount = Account(
                 name: name,
                 type: type,

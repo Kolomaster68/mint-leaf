@@ -410,8 +410,8 @@ struct EditGoalSheet: View {
     }
 
     private func save() {
-        let target = Decimal(string: targetAmount) ?? 0
-        let saved = Decimal(string: savedAmount) ?? 0
+        let target = Decimal(userInput: targetAmount) ?? 0
+        let saved = Decimal(userInput: savedAmount) ?? 0
 
         if let g = goal {
             g.name = name

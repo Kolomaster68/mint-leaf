@@ -24,6 +24,7 @@ enum SidebarDestination: Hashable {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var context
+    @Environment(\.undoManager) private var undoManager
     @Environment(\.colorScheme) private var scheme
     @Environment(\.appTextScale) private var textScale
     @Query(sort: \Account.sortOrder) private var accounts: [Account]
@@ -117,6 +118,9 @@ struct ContentView: View {
                 BackupManager.performAutomaticBackup(context: context)
             }
             ScheduledTransactionProcessor.processOverdue(context: context)
+            // ⌘Z / Edit ▸ Undo now reverses deletes, edits and imports. Hooked up after
+            // launch processing so undo can't un-post a bill the app just charged.
+            context.undoManager = undoManager
             if shouldStartTutorial {
                 shouldStartTutorial = false
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -261,7 +265,7 @@ struct ContentView: View {
                     .buttonStyle(.plain)
                     .padding(.trailing, 10)
                 }
-                    Text(CurrencyFormatter.shared.format(accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.currentBalance }))
+                    Text(CurrencyFormatter.shared.format(accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.convertedBalance }))
                         .font(.subheadline.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 2)

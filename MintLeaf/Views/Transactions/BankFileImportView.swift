@@ -279,7 +279,7 @@ struct BankFileImportView: View {
 
     private func performImport() {
         let selected = parsedTransactions.filter { selectedIDs.contains($0.id) }
-        let existingTransactions = account.transactions
+        var duplicatePool = account.transactions
         var imported = 0
         var duplicates = 0
 
@@ -295,8 +295,7 @@ struct BankFileImportView: View {
             )
 
             // Check for duplicates
-            let isDupe = DuplicateDetector.findDuplicates(incoming: [transaction], existing: existingTransactions)
-            if !isDupe.isEmpty {
+            if DuplicateDetector.consumeDuplicate(of: transaction, in: &duplicatePool) {
                 duplicates += 1
                 continue
             }

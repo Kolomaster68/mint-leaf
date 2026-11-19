@@ -10,6 +10,7 @@ struct NewBudgetSheet: View {
     @State private var name = ""
     @State private var period: BudgetPeriod = .monthly
     @State private var startDate = Date()
+    @State private var rollover = false
 
     private var isEditing: Bool { editing != nil }
 
@@ -23,6 +24,10 @@ struct NewBudgetSheet: View {
                     }
                 }
                 DatePicker("Start Date", selection: $startDate, displayedComponents: .date)
+                Toggle(isOn: $rollover) {
+                    Text("Roll over unspent money")
+                    Text("Leftovers carry into the next period; overspending comes out of it.")
+                }
             }
             .navigationTitle(isEditing ? "Edit Budget" : "New Budget")
             #if os(iOS)
@@ -38,8 +43,10 @@ struct NewBudgetSheet: View {
                             editing.name = name
                             editing.period = period
                             editing.startDate = startDate
+                            editing.rollover = rollover
                         } else {
                             let budget = Budget(name: name, period: period, startDate: startDate)
+                            budget.rollover = rollover
                             context.insert(budget)
                         }
                         dismiss()
@@ -52,10 +59,11 @@ struct NewBudgetSheet: View {
                     name = editing.name
                     period = editing.period
                     startDate = editing.startDate
+                    rollover = editing.rollover
                 }
             }
         }
         .formStyle(.grouped)
-        .macOSSheet(width: 500, height: 340)
+        .macOSSheet(width: 500, height: 380)
     }
 }

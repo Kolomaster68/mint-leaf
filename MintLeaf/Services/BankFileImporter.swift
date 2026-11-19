@@ -23,15 +23,10 @@ struct BankFileParseResult {
 enum OFXParser {
     /// Parse an OFX/QFX file and return structured transactions
     static func parse(from url: URL) throws -> BankFileParseResult {
-        let content = try String(contentsOf: url, encoding: .utf8)
-        // Some OFX files use Latin1 encoding
-        let text: String
-        if content.contains("<OFX>") || content.contains("<ofx>") {
-            text = content
-        } else if let latin = try? String(contentsOf: url, encoding: .isoLatin1),
-                  latin.contains("<OFX>") || latin.contains("<ofx>") {
-            text = latin
-        } else {
+        // Most UK bank OFX is Windows-1252, where a single £ makes a UTF-8 read throw.
+        let text = try (try? String(contentsOf: url, encoding: .utf8))
+            ?? String(contentsOf: url, encoding: .windowsCP1252)
+        guard text.range(of: "<OFX>", options: .caseInsensitive) != nil else {
             throw BankFileError.invalidFormat("Not a valid OFX file")
         }
 
@@ -63,7 +58,7 @@ enum OFXParser {
             guard let dateStr = extractTag("DTPOSTED", from: block),
                   let date = parseOFXDate(dateStr),
                   let amountStr = extractTag("TRNAMT", from: block),
-                  let amount = Decimal(string: amountStr) else { return }
+                  let amount = Decimal(userInput: amountStr) else { return }
 
             let name = extractTag("NAME", from: block) ?? extractTag("MEMO", from: block) ?? "Unknown"
             let memo = extractTag("MEMO", from: block) ?? ""
@@ -115,7 +110,7 @@ enum OFXParser {
                 dateStr = nil; amountStr = nil; name = nil; memo = nil; fitID = nil
             } else if trimmed.hasPrefix("</STMTTRN>") || (!trimmed.hasPrefix("<") && inTransaction && dateStr != nil && amountStr != nil && name != nil && trimmed.hasPrefix("<STMTTRN>")) {
                 if let ds = dateStr, let date = parseOFXDate(ds),
-                   let as_ = amountStr, let amount = Decimal(string: as_) {
+                   let as_ = amountStr, let amount = Decimal(userInput: as_) {
                     transactions.append(ParsedBankTransaction(
                         date: date,
                         amount: amount,
@@ -140,7 +135,7 @@ enum OFXParser {
 
         // Handle last transaction if file doesn't end with </STMTTRN>
         if inTransaction, let ds = dateStr, let date = parseOFXDate(ds),
-           let as_ = amountStr, let amount = Decimal(string: as_) {
+           let as_ = amountStr, let amount = Decimal(userInput: as_) {
             transactions.append(ParsedBankTransaction(
                 date: date,
                 amount: amount,
@@ -207,15 +202,7 @@ enum QIFParser {
         var payee: String?
         var memo: String?
 
-        let dateFormatters: [DateFormatter] = {
-            let formats = ["MM/dd/yyyy", "dd/MM/yyyy", "MM/dd'yy", "yyyy-MM-dd", "M/d/yyyy", "M/d'yy"]
-            return formats.map { fmt in
-                let f = DateFormatter()
-                f.dateFormat = fmt
-                f.locale = Locale(identifier: "en_US_POSIX")
-                return f
-            }
-        }()
+        let dayFirst = isDayFirst(lines)
 
         for line in lines {
             let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -232,21 +219,10 @@ enum QIFParser {
                 }
             case "D":
                 // Date — try multiple formats
-                let cleaned = value.replacingOccurrences(of: "'", with: "/")
-                for formatter in dateFormatters {
-                    if let d = formatter.date(from: cleaned) {
-                        date = d
-                        break
-                    }
-                }
+                date = parseDate(value, dayFirst: dayFirst)
             case "T", "U":
                 // Amount
-                let cleaned = value
-                    .replacingOccurrences(of: ",", with: "")
-                    .replacingOccurrences(of: "$", with: "")
-                    .replacingOccurrences(of: "£", with: "")
-                    .replacingOccurrences(of: "€", with: "")
-                amount = Decimal(string: cleaned)
+                amount = Decimal(userInput: value)
             case "P":
                 payee = value
             case "M":
@@ -281,6 +257,41 @@ enum QIFParser {
             accountType: accountType,
             currency: nil
         )
+    }
+}
+
+extension QIFParser {
+    /// Splits a QIF date ("25/03/2026", "3/25'26", "2026-03-25") into its numbers.
+    private static func dateParts(_ raw: String) -> [Int] {
+        raw.split(whereSeparator: { !$0.isNumber }).compactMap { Int($0) }
+    }
+
+    /// QIF doesn't say whether dates are day-first. Trying US order first turned every
+    /// UK date with a day ≤ 12 into the wrong month, so decide once per file: any value
+    /// over 12 settles it, otherwise follow the Mac's region.
+    static func isDayFirst(_ lines: [String]) -> Bool {
+        for line in lines where line.hasPrefix("D") {
+            let p = dateParts(String(line.dropFirst()))
+            guard p.count == 3, p[0] < 1000 else { continue }
+            if p[0] > 12 { return true }
+            if p[1] > 12 { return false }
+        }
+        return Locale.current.region?.identifier != "US"
+    }
+
+    static func parseDate(_ raw: String, dayFirst: Bool) -> Date? {
+        let p = dateParts(raw)
+        guard p.count == 3 else { return nil }
+        var c = DateComponents()
+        if p[0] >= 1000 {                       // ISO: yyyy-MM-dd
+            (c.year, c.month, c.day) = (p[0], p[1], p[2])
+        } else {
+            c.day = dayFirst ? p[0] : p[1]
+            c.month = dayFirst ? p[1] : p[0]
+            c.year = p[2] < 100 ? 2000 + p[2] : p[2]   // "'26" is 2026, not year 26
+        }
+        guard let m = c.month, let d = c.day, (1...12).contains(m), (1...31).contains(d) else { return nil }
+        return Calendar.current.date(from: c)
     }
 }
 

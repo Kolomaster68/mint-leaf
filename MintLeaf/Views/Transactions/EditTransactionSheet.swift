@@ -148,7 +148,7 @@ struct EditTransactionSheet: View {
         guard let t = transaction else { return }
         title = t.title
         amount = "\(t.absoluteAmount)"
-        isExpense = t.isExpense
+        isExpense = t.amount < 0 // not t.isExpense: that is false for transfers, which flipped their sign on save
         date = t.date
         notes = t.notes
         location = t.location ?? ""
@@ -161,7 +161,7 @@ struct EditTransactionSheet: View {
     }
 
     private func save() {
-        guard let value = Decimal(string: amount) else { return }
+        guard let value = Decimal(userInput: amount) else { return }
         let signedAmount = isExpense ? -abs(value) : abs(value)
 
         let tagsToApply = allTags.filter { selectedTags.contains($0.id) }

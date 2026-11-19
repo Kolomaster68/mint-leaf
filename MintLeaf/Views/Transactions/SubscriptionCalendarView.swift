@@ -752,7 +752,7 @@ struct AddSubscriptionSheet: View {
                     }
 
                     if currency != (UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"),
-                       let value = Decimal(string: amount), value > 0 {
+                       let value = Decimal(userInput: amount), value > 0 {
                         let preferred = UserDefaults.standard.string(forKey: "defaultCurrency") ?? "USD"
                         let converted = ExchangeRateService.shared.convert(value, from: currency, to: preferred)
                         HStack {
@@ -849,7 +849,7 @@ struct AddSubscriptionSheet: View {
     }
 
     private func save() {
-        guard let value = Decimal(string: amount) else { return }
+        guard let value = Decimal(userInput: amount) else { return }
         let signed = -abs(value)
 
         let sub = ScheduledTransaction(

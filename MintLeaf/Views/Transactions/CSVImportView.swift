@@ -17,8 +17,8 @@ struct CSVImportView: View {
     @State private var importResult: CSVImportResult?
     @State private var showingFilePicker = true
     @State private var errorMessage: String?
-    @State private var normalizeNames = true
-    @State private var detectDuplicates = true
+    @AppStorage("importNormalizeNames") private var normalizeNames = true
+    @AppStorage("importDetectDuplicates") private var detectDuplicates = true
     @AppStorage("csvDateFormat") private var dateFormat = "dd/MM/yyyy"
 
     var body: some View {
@@ -171,12 +171,23 @@ struct CSVImportView: View {
                 else if lower.contains("category") { col.mapping = .category }
                 return col
             }
+            // Same bank, same layout: reuse the mapping the user settled on last time.
+            if let saved = UserDefaults.standard.stringArray(forKey: layoutKey), saved.count == columns.count {
+                for i in columns.indices {
+                    columns[i].mapping = CSVFieldMapping(rawValue: saved[i]) ?? columns[i].mapping
+                }
+            }
         } catch {
             errorMessage = error.localizedDescription
         }
     }
 
+    /// Keyed by the header row, so each bank's export format gets its own memory.
+    private var layoutKey: String { "csvLayout." + headers.joined(separator: "|") }
+
     private func performImport() {
+        UserDefaults.standard.set(columns.map(\.mapping.rawValue), forKey: layoutKey)
+        let existingIDs = Set(account.transactions.map(\.id))
         let result = CSVImporter.importTransactions(
             rows: rows,
             columns: columns,
@@ -187,7 +198,7 @@ struct CSVImportView: View {
         )
 
         if normalizeNames {
-            for txn in account.transactions {
+            for txn in account.transactions where !existingIDs.contains(txn.id) {
                 txn.title = MerchantNormalizer.normalize(txn.title)
             }
         }

@@ -29,15 +29,15 @@ struct NetWorthView: View {
     }
 
     private var assets: Decimal {
-        activeAccounts.filter { $0.currentBalance > 0 }.reduce(Decimal.zero) { $0 + $1.currentBalance }
+        activeAccounts.filter { $0.currentBalance > 0 }.reduce(Decimal.zero) { $0 + $1.convertedBalance }
     }
 
     private var liabilities: Decimal {
-        activeAccounts.filter { $0.currentBalance < 0 }.reduce(Decimal.zero) { $0 + abs($1.currentBalance) }
+        activeAccounts.filter { $0.currentBalance < 0 }.reduce(Decimal.zero) { $0 + abs($1.convertedBalance) }
     }
 
     private var netWorth: Decimal {
-        activeAccounts.reduce(Decimal.zero) { $0 + $1.currentBalance }
+        activeAccounts.reduce(Decimal.zero) { $0 + $1.convertedBalance }
     }
 
     var body: some View {

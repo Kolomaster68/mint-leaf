@@ -12,7 +12,7 @@ struct AccountsListView: View {
     private var archivedAccounts: [Account] { accounts.filter { $0.isArchived } }
 
     private var totalBalance: Decimal {
-        activeAccounts.reduce(Decimal.zero) { $0 + $1.currentBalance }
+        activeAccounts.reduce(Decimal.zero) { $0 + $1.convertedBalance }
     }
 
     private func moveAccounts(from source: IndexSet, to destination: Int) {

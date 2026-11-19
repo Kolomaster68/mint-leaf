@@ -14,7 +14,7 @@ struct ForecastView: View {
     }
 
     private var totalBalance: Decimal {
-        accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.currentBalance }
+        accounts.filter { !$0.isArchived }.reduce(Decimal.zero) { $0 + $1.convertedBalance }
     }
 
     var body: some View {
@@ -69,9 +69,9 @@ struct ForecastView: View {
             HStack(spacing: 12) {
                 metricCard(
                     "Projected",
-                    value: forecast.projectedBalance30d,
-                    subtitle: "30 days",
-                    color: forecast.projectedBalance30d >= 0 ? .green : .red
+                    value: forecast.points.last?.projectedBalance ?? totalBalance,
+                    subtitle: forecastDays == 180 ? "6 months" : "\(forecastDays) days",
+                    color: (forecast.points.last?.projectedBalance ?? totalBalance) >= 0 ? .green : .red
                 )
                 metricCard(
                     "Daily Spend",

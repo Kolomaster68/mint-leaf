@@ -12,6 +12,7 @@ struct MintLeafApp: App {
     @AppStorage("textSizeOffset") private var textSizeOffset: Int = 0
     @AppStorage("highContrastMode") private var highContrastMode = false
     @AppStorage("reduceMotion") private var reduceMotion = false
+    @AppStorage("showMenuBarExtra") private var showMenuBar = true
 
     static let isDevMode = ProcessInfo.processInfo.arguments.contains("-useSampleData")
 
@@ -85,7 +86,7 @@ struct MintLeafApp: App {
     }
 
     var body: some Scene {
-        WindowGroup {
+        WindowGroup(id: "main") {
             ContentView()
                 .preferredColorScheme(selectedAppearance.colorScheme)
                 .environment(\.appTextScale, textScale)
@@ -119,6 +120,13 @@ struct MintLeafApp: App {
                 .environment(\.appHighContrast, highContrastMode)
         }
         .modelContainer(container)
+
+        MenuBarExtra("MintLeaf", systemImage: "leaf.fill", isInserted: $showMenuBar) {
+            MenuBarView()
+                .preferredColorScheme(selectedAppearance.colorScheme)
+                .modelContainer(container)
+        }
+        .menuBarExtraStyle(.window)
         #endif
     }
 
@@ -167,3 +175,140 @@ struct MintLeafApp: App {
     }
     #endif
 }
+
+#if os(macOS)
+// MARK: - Menu bar glance
+
+/// Payday figure, the next few bills and a quick-add, without opening the main window.
+/// Respects the app lock: figures stay hidden until Touch ID passes.
+struct MenuBarView: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.colorScheme) private var scheme
+    @Environment(\.openWindow) private var openWindow
+    @AppStorage("biometricLockEnabled") private var biometricEnabled = false
+    @Query(sort: \Account.sortOrder) private var accounts: [Account]
+    @Query(sort: \ScheduledTransaction.nextDate) private var scheduled: [ScheduledTransaction]
+    @Query(sort: \CategoryRule.sortOrder) private var rules: [CategoryRule]
+    @Query private var aliases: [MerchantAlias]
+
+    @State private var unlocked = false
+    @State private var title = ""
+    @State private var amount = ""
+    @State private var isIncome = false
+    @State private var accountID: UUID?
+    @State private var added: String?
+
+    private var active: [Account] { accounts.filter { !$0.isArchived } }
+
+    var body: some View {
+        Group {
+            if biometricEnabled && !unlocked {
+                LockScreenView(isUnlocked: $unlocked)
+                    .frame(height: 300)
+            } else {
+                content
+            }
+        }
+        .frame(width: 300)
+    }
+
+    private var content: some View {
+        let p = CashflowForecaster.untilPayday(accounts: accounts, scheduled: scheduled)
+        let bills = scheduled.filter { $0.isActive && $0.amount < 0 }.prefix(3)
+        return VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(p.payday == nil ? "Left until month end" : "Left until payday")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(AppTheme.accent(for: scheme))
+                Text(CurrencyFormatter.shared.format(p.left))
+                    .font(.system(size: 26, weight: .bold, design: .rounded).monospacedDigit())
+                    .foregroundStyle(p.left < 0 ? AppTheme.expense : .primary)
+                if let payday = p.payday {
+                    Text("Payday \(payday.formatted(.dateTime.weekday(.wide).day().month()))")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            if !bills.isEmpty {
+                Divider()
+                ForEach(Array(bills)) { bill in
+                    HStack {
+                        Text(bill.title).lineLimit(1)
+                        Spacer()
+                        Text(bill.nextDate, format: .dateTime.day().month(.abbreviated))
+                            .foregroundStyle(.secondary)
+                        Text(CurrencyFormatter.shared.format(abs(bill.convertedAmount)))
+                            .monospacedDigit()
+                    }
+                    .font(.caption)
+                }
+            }
+
+            Divider()
+            Text("Quick add").font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            Picker("", selection: $isIncome) {
+                Text("Spent").tag(false)
+                Text("Received").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            HStack {
+                TextField("What for?", text: $title)
+                TextField("0.00", text: $amount)
+                    .frame(width: 70)
+                    .multilineTextAlignment(.trailing)
+            }
+            .textFieldStyle(.roundedBorder)
+            .onSubmit(add)
+            HStack {
+                Picker("", selection: $accountID) {
+                    ForEach(active) { Text($0.name).tag(Optional($0.id)) }
+                }
+                .labelsHidden()
+                Button("Add", action: add)
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(title.isEmpty || Decimal(userInput: amount) == nil)
+            }
+            if let added {
+                Text(added).font(.caption).foregroundStyle(AppTheme.accent(for: scheme))
+            }
+
+            Divider()
+            HStack {
+                Button("Open MintLeaf") { openMain() }
+                Spacer()
+                Button("Quit") { NSApp.terminate(nil) }
+            }
+            .buttonStyle(.borderless)
+            .font(.caption)
+        }
+        .padding(14)
+        .onAppear { if accountID == nil { accountID = active.first?.id } }
+    }
+
+    private func add() {
+        guard !title.isEmpty, let value = Decimal(userInput: amount),
+              let account = active.first(where: { $0.id == accountID }) else { return }
+        let signed = isIncome ? abs(value) : -abs(value)
+        let txn = Transaction(amount: signed, title: title, account: account)
+        context.insert(txn)
+        RulesEngine.applyRules(to: txn, rules: rules, aliases: aliases)
+        account.adjustBalance(by: signed)
+        context.saveOrLog()
+        added = "Added \(title) to \(account.name)"
+        title = ""
+        amount = ""
+    }
+
+    private func openMain() {
+        NSApp.activate(ignoringOtherApps: true)
+        if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            openWindow(id: "main")
+        }
+    }
+}
+#endif
+

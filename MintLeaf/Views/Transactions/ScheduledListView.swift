@@ -370,14 +370,14 @@ struct NewScheduledSheet: View {
 
     private func checkSubscription() {
         guard !isEditing, !isSubscription else { return }
-        let amt = Decimal(string: amount) ?? 0
+        let amt = Decimal(userInput: amount) ?? 0
         let signed = isExpense ? -abs(amt) : abs(amt)
         let detected = SubscriptionDetector.looksLikeSubscription(title: title, amount: signed, frequency: frequency)
         withAnimation { showSubscriptionSuggestion = detected }
     }
 
     private func save() {
-        guard let value = Decimal(string: amount) else { return }
+        guard let value = Decimal(userInput: amount) else { return }
         let signed = isExpense ? -abs(value) : abs(value)
 
         if let editing {
@@ -386,6 +386,7 @@ struct NewScheduledSheet: View {
             editing.currency = currency
             editing.frequency = frequency
             editing.nextDate = nextDate
+            editing.anchorDay = Calendar.current.component(.day, from: nextDate)
             editing.account = selectedAccount
             editing.category = selectedCategory
             editing.isSubscription = isSubscription

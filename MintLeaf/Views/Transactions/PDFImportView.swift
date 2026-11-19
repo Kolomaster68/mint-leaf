@@ -17,7 +17,7 @@ struct PDFImportView: View {
     @State private var importCount = 0
     @State private var duplicatesSkipped = 0
     @State private var didImport = false
-    @State private var detectDuplicates = true
+    @AppStorage("importDetectDuplicates") private var detectDuplicates = true
     @State private var setOpeningBalance = false
     @State private var detectedOpeningBalance: Decimal?
 
@@ -249,7 +249,7 @@ struct PDFImportView: View {
         guard let statement = parsedStatement else { return }
         var count = 0
         var dupes = 0
-        let existingTransactions = account.transactions
+        var duplicatePool = account.transactions
 
         for index in selectedRows.sorted() {
             let parsed = statement.transactions[index]
@@ -264,11 +264,7 @@ struct PDFImportView: View {
             )
 
             if detectDuplicates {
-                let matches = DuplicateDetector.findDuplicates(
-                    incoming: [transaction],
-                    existing: existingTransactions
-                )
-                if !matches.isEmpty {
+                if DuplicateDetector.consumeDuplicate(of: transaction, in: &duplicatePool) {
                     dupes += 1
                     continue
                 }

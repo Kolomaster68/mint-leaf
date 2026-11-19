@@ -27,9 +27,9 @@ struct BudgetDetailView: View {
                         Text("Remaining")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text(CurrencyFormatter.shared.format(budget.totalBudgeted - budget.totalSpent))
+                        Text(CurrencyFormatter.shared.format(budget.totalAvailable - budget.totalSpent))
                             .font(.title3.bold())
-                            .foregroundStyle(budget.totalSpent <= budget.totalBudgeted ? AppTheme.accent(for: scheme) : .red)
+                            .foregroundStyle(budget.totalSpent <= budget.totalAvailable ? AppTheme.accent(for: scheme) : .red)
                     }
                     Spacer()
                     VStack(alignment: .trailing) {
@@ -38,6 +38,12 @@ struct BudgetDetailView: View {
                             .foregroundStyle(.secondary)
                         Text(CurrencyFormatter.shared.format(budget.totalBudgeted))
                             .font(.title3.bold())
+                        if budget.rollover && budget.totalAvailable != budget.totalBudgeted {
+                            let carried = budget.totalAvailable - budget.totalBudgeted
+                            Text("\(carried >= 0 ? "+" : "")\(CurrencyFormatter.shared.format(carried)) rolled over")
+                                .font(.caption2)
+                                .foregroundStyle(carried >= 0 ? AppTheme.accent(for: scheme) : .red)
+                        }
                     }
                 }
                 .padding(.vertical, 8)
@@ -55,11 +61,11 @@ struct BudgetDetailView: View {
                                 Text("Uncategorized")
                             }
                             Spacer()
-                            Text("\(CurrencyFormatter.shared.format(item.spent)) / \(CurrencyFormatter.shared.format(item.amount))")
+                            Text("\(CurrencyFormatter.shared.format(item.spent)) / \(CurrencyFormatter.shared.format(item.available))")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
-                        BudgetProgressBar(spent: item.spent, total: item.amount)
+                        BudgetProgressBar(spent: item.spent, total: item.available)
                     }
                     .padding(.vertical, 4)
                     .contentShape(Rectangle())
@@ -169,7 +175,7 @@ struct AddBudgetItemSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(isEditing ? "Save" : "Add") {
-                        if let value = Decimal(string: amount) {
+                        if let value = Decimal(userInput: amount) {
                             if let editing {
                                 editing.amount = value
                                 editing.category = selectedCategory

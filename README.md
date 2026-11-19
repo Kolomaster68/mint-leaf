@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-4.2.0-gold" alt="Version">
+  <img src="https://img.shields.io/badge/version-4.3.0-gold" alt="Version">
   <img src="https://img.shields.io/badge/platform-macOS%20%7C%20iOS-blue" alt="Platform">
   <img src="https://img.shields.io/badge/swift-6.0-orange" alt="Swift">
   <img src="https://img.shields.io/badge/swiftui-5.0-purple" alt="SwiftUI">
@@ -38,6 +38,16 @@
 <p align="center">
   <img src="screenshots/tutorial-overview-dark.png" width="800" alt="Mint Leaf Dashboard">
 </p>
+
+## What's New in v4.3
+
+- **Left Until Payday** — A new top card shows what's left in your current and cash accounts once every bill due before your next income has gone out, with days to go and a daily allowance
+- **Undo** — `Cmd`+`Z` reverses deletes, edits and imports
+- **Cancelled Subscription Detection** — If a subscription's charges stop turning up in your bank imports, Mint Leaf asks whether it's been cancelled and can stop it and remove the ghost charges
+- **Menu Bar Glance** — Payday figure, next bills and a quick add from the menu bar, respecting the app lock
+- **Budget Rollover** — Optional per budget: unspent money carries into the next period, overspending comes out of it
+- **Import Memory** — Remembers your last import account, each bank's CSV column layout, and your import options
+- **Fixes** — Credit-card statement balances and overdue dates, budgets that never rolled into the next period, `1,234.56`-style amounts, transfer edits flipping direction, UK QIF dates, non-UTF-8 bank files, duplicate detection swallowing genuine repeat charges, scheduled charges doubling real payments, forecast recurrence, mixed-currency totals, and month-end schedules drifting to the 28th
 
 ## What's New in v4.2
 
@@ -96,7 +106,8 @@ v4.0 is a major release focused on **credit cards, account safety, and trust**.
 - **Reconciliation** — Mark transactions as reconciled and compare against bank statements
 
 ### Budgets & Planning
-- **Budgets** — Set monthly spending limits by category and track progress in real time
+- **Left Until Payday** — What's actually left to spend before your next income, after upcoming bills
+- **Budgets** — Set spending limits by category and track progress in real time, with optional rollover
 - **Goals & Wishlist** — Savings targets with progress rings, target dates, and daily savings needed. Wishlist mode for tracking items to buy
 - **Forecast** — Balance projections based on scheduled transactions with what-if scenarios
 - **Scheduled Transactions** — Manage recurring bills, subscriptions, and income on a calendar
@@ -112,6 +123,8 @@ v4.0 is a major release focused on **credit cards, account safety, and trust**.
 - **Tags** — Colour-coded labels that work across categories for flexible transaction grouping
 - **Rules & Automation** — Auto-categorise transactions with pattern matching and merchant aliases
 - **Notification Centre** — In-app alerts for due bills, exceeded budgets, and overdue items with swipe-to-dismiss
+- **Menu Bar** — Payday figure, upcoming bills and quick add without opening the app
+- **Cancelled Subscription Detection** — Spots subscriptions that have stopped charging your bank
 
 ### Safety & Trust
 - **Automatic Backups** — Daily snapshots kept locally, plus full backup/restore to a portable JSON file
@@ -274,28 +287,37 @@ Mint Leaf is under active development. Here's what's been shipped and what's com
 | v4.0 | Account Reordering |
 | v4.1 | Live Exchange Rates (ECB) |
 | v4.1 | Price-Change Alerts |
+| v4.2 | Golden Gate Sidebar |
+| v4.2 | Test Suite |
+| v4.3 | Left Until Payday |
+| v4.3 | Undo |
+| v4.3 | Cancelled Subscription Detection |
+| v4.3 | Menu Bar Glance |
+| v4.3 | Budget Rollover |
+| v4.3 | Import Memory |
 
-### Coming Next
+Planned work is tracked as [issues](https://github.com/Kolomaster68/mint-leaf/issues?q=is%3Aopen+label%3Aroadmap), grouped into **Next** and **Later** milestones. There are no dates — it's built in spare time.
 
-These features are actively being explored for upcoming releases:
+### Next
 
 | Feature | Description |
 |---------|-------------|
-| **Recurring Transaction Detection** | Automatically detect recurring patterns when importing bank statements and suggest scheduled transactions |
-| **Split Transactions** | Split a single transaction across multiple categories, people, or accounts for shared expenses |
+| **Split Transactions** | Split one transaction across several categories, for shared or mixed purchases |
+| **Detected Pattern → Schedule** | Insights already spots recurring payments; turn one into a scheduled item in one tap |
+| **CSV Bank Auto-Detect** | Recognise a bank's export format and import with no column mapping at all |
+| **Shortcuts & Siri** | "Log a £5 expense" from Shortcuts, Siri or Spotlight |
 | **PDF Report Export** | Polished monthly and yearly PDF reports to save or share |
-| **On-Device AI** | Smarter statement parsing and natural-language search using Apple's on-device models, with no data leaving your device |
 
-### Future Considerations
+### Later
 
 | Feature | Notes |
 |---------|-------|
-| Receipt Scanning | Attach photos or scan receipts to extract amounts |
-| Widgets | At-a-glance spending and balance widgets (requires Apple Developer account) |
-| Apple Watch | Quick balance checks from your wrist (requires Apple Developer account) |
-| Bank Integration | Connect accounts via Plaid or Open Banking |
+| On-Device AI | Smarter statement parsing and natural-language search with Apple's on-device models — nothing leaves your device |
+| Debt Payoff Planner | Snowball/avalanche plans for cards and overdrafts |
+| iOS Release, Widgets & Apple Watch | Requires a paid Apple Developer account |
+| Bank Integration | Open Banking needs a paid aggregator and a server, which conflicts with "your data never leaves your device" — only if a private way exists |
 
-Have a feature request? [Open an issue](https://github.com/Kolomaster68/mint-leaf/issues).
+Have a feature request? Share it in [Discussions → Ideas](https://github.com/Kolomaster68/mint-leaf/discussions/categories/ideas). Found a bug? [Open an issue](https://github.com/Kolomaster68/mint-leaf/issues/new/choose).
 
 ## Contributing
 

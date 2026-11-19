@@ -39,6 +39,38 @@ final class DuplicateDetector {
         return matches
     }
 
+    /// One-to-one duplicate check for importers. A matched existing transaction is
+    /// removed from `pool`, so two genuine identical charges on one day (two £6.20 tube
+    /// fares) can't both be swallowed by a single existing entry.
+    ///
+    /// Also matches an auto-posted scheduled charge of the same amount within five days:
+    /// the bank's line and the app's placeholder are the same money (a "Rent" auto-post
+    /// on the 31st and the real payment on the 3rd). The placeholder takes the bank's date.
+    static func consumeDuplicate(of candidate: Transaction, in pool: inout [Transaction]) -> Bool {
+        if let best = findDuplicates(incoming: [candidate], existing: pool).max(by: { $0.confidence < $1.confidence }) {
+            confirm(best.existing, with: candidate)
+            pool.removeAll { $0 === best.existing }
+            return true
+        }
+        let calendar = Calendar.current
+        if let placeholder = pool.first(where: { old in
+            old.scheduledSource != nil && old.amount == candidate.amount &&
+            abs(calendar.dateComponents([.day], from: old.date, to: candidate.date).day ?? 999) <= 5
+        }) {
+            placeholder.date = candidate.date
+            confirm(placeholder, with: candidate)
+            pool.removeAll { $0 === placeholder }
+            return true
+        }
+        return false
+    }
+
+    /// The bank has the charge, so an auto-posted placeholder is real: drop its
+    /// "Auto-charged" note (cancelled-subscription detection keys off it).
+    private static func confirm(_ existing: Transaction, with bankLine: Transaction) {
+        if ScheduledTransactionProcessor.isUnconfirmed(existing) { existing.notes = bankLine.notes }
+    }
+
     static func similarity(_ a: String, _ b: String) -> Double {
         let setA = Set(a.lowercased().components(separatedBy: .whitespaces))
         let setB = Set(b.lowercased().components(separatedBy: .whitespaces))

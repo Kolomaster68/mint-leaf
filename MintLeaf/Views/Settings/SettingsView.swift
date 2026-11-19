@@ -12,6 +12,7 @@ struct SettingsView: View {
     @AppStorage("textSizeOffset") private var textSizeOffset: Int = 0
     @AppStorage("highContrastMode") private var highContrastMode = false
     @AppStorage("reduceMotion") private var reduceMotion = false
+    @AppStorage("showMenuBarExtra") private var showMenuBar = true
     @State private var pendingAppearance: String = AppAppearance.system.rawValue
     @State private var showingNewCategory = false
     @State private var editingCategory: Category?
@@ -493,6 +494,13 @@ struct SettingsView: View {
         }
 
         #if os(macOS)
+        Section("Menu Bar") {
+            Toggle(isOn: $showMenuBar) {
+                Text("Show MintLeaf in the menu bar")
+                Text("Left-until-payday, upcoming bills and a quick add, one click away.")
+            }
+        }
+
         Section("App Icon") {
             HStack(spacing: 16) {
                 Spacer()
@@ -1088,6 +1096,10 @@ struct SettingsView: View {
             defaults.removeObject(forKey: "textSizeOffset")
             defaults.removeObject(forKey: "highContrastMode")
             defaults.removeObject(forKey: "reduceMotion")
+            defaults.removeObject(forKey: "lastImportAccountID")
+            for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("csvLayout.") {
+                defaults.removeObject(forKey: key)
+            }
             defaults.removeObject(forKey: "biometricLockEnabled")
             DashboardConfig.shared.resetToDefaults()
             NotificationManager.shared.restoreAll()
