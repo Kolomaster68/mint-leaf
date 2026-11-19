@@ -122,4 +122,62 @@ final class MoneyMathTests: XCTestCase {
         XCTAssertEqual(fx.convert(100, from: "USD", to: "USD"), 100)
         XCTAssertGreaterThan(fx.convert(100, from: "USD", to: "GBP"), 0)
     }
+    
+    // MARK: CSV Import
+
+     func testCSVImportCreatesTransactions() throws {
+         let ctx = try makeContext()
+
+         let account = Account(
+             name: "Credit Card",
+             type: .creditCard,
+             initialBalance: 0
+         )
+         ctx.insert(account)
+
+         let rows = [
+             ["11/01/2026", "Costco", "-125.50"],
+             ["11/02/2026", "Employer", "2500.00"]
+         ]
+
+         let columns = [
+             CSVColumn(index: 0, header: "Date", mapping: .date),
+             CSVColumn(index: 1, header: "Payee", mapping: .title),
+             CSVColumn(index: 2, header: "Amount", mapping: .amount)
+         ]
+
+         let result = CSVImporter.importTransactions(
+             rows: rows,
+             columns: columns,
+             account: account,
+             context: ctx,
+             dateFormat: "MM/dd/yyyy",
+             detectDuplicates: true
+         )
+
+         try ctx.save()
+
+         XCTAssertEqual(result.imported, 2)
+         XCTAssertEqual(result.skipped, 0)
+         XCTAssertEqual(result.duplicatesDetected, 0)
+         XCTAssertTrue(result.errors.isEmpty)
+
+         let transactions = try ctx.fetch(
+             FetchDescriptor<Transaction>()
+         )
+
+         XCTAssertEqual(transactions.count, 2)
+
+         let costco = try XCTUnwrap(
+             transactions.first { $0.title == "Costco" }
+         )
+
+         XCTAssertEqual(costco.amount, Decimal(string: "-125.50"))
+
+         let employer = try XCTUnwrap(
+             transactions.first { $0.title == "Employer" }
+         )
+
+         XCTAssertEqual(employer.amount, Decimal(string: "2500.00"))
+     }
 }
