@@ -682,7 +682,7 @@ struct SettingsView: View {
                 Image(systemName: "heart.fill")
                     .font(.caption)
                     .foregroundStyle(.red.opacity(0.6))
-                Text("by Joe Farmer")
+                Text("by Kolomaster68")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                 Spacer()
