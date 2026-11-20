@@ -296,7 +296,7 @@ Mint Leaf is under active development. Here's what's been shipped and what's com
 | v4.3 | Budget Rollover |
 | v4.3 | Import Memory |
 
-Planned work is tracked as [issues](https://github.com/Kolomaster68/mint-leaf/issues?q=is%3Aopen+label%3Aroadmap), grouped into **Next** and **Later** milestones. There are no dates — it's built in spare time.
+Follow progress on the **[roadmap board](https://github.com/users/Kolomaster68/projects/1)** — every item is an [issue](https://github.com/Kolomaster68/mint-leaf/issues?q=is%3Aopen+label%3Aroadmap) sorted into **Now**, **Next** and **Later**. There are no dates — it's built in spare time.
 
 ### Next
 
